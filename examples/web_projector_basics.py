@@ -25,11 +25,10 @@ from wowcube.utils.image import Image
 
 app = Flask(__name__)
 app.config.update(
-    # FAKE_LATENCY_BEFORE=0.132,
     FAKE_LATENCY_BEFORE=1,
 )
 app.debug = True
-# Latency(app)
+
 
 font = cv2.FONT_HERSHEY_SIMPLEX
 boundary = 'frame'  # multipart boundary
@@ -42,19 +41,11 @@ try:
             turbo_jpeg = TurboJPEG(os.path.join(root_dir, "turbojpeg", "turbojpeg.dll"))
         except:
             turbo_jpeg = TurboJPEG(os.path.join(root_dir, "turbojpeg", "turbojpeg64.dll"))
-    elif platform.system() == "Linux":
-        try:
-            turbo_jpeg = TurboJPEG(os.path.join(root_dir, "turbojpeg", "libturbojpeg.so"))
-        except:
-            turbo_jpeg = TurboJPEG(os.path.join(root_dir, "turbojpeg", "libturbojpeg64.so"))
-    elif platform.system() == "Darwin":
-        turbo_jpeg = TurboJPEG(os.path.join(root_dir, "turbojpeg", "libturbojpeg.dylib"))
 except (FileNotFoundError, OSError):
     pass
 
 W, H = 1920, 1440
 SSP = 240  # screen size pixels
-
 
 def draw_cubenet(wowcube: Optional[WOWCube]) -> np.ndarray:
     img = np.zeros((H, W, 3), np.uint8)
@@ -220,13 +211,10 @@ def basics_multipart_screen():
 
 
 if __name__ == '__main__':
-    if turbo_jpeg:
-        print("Using TurboJpeg")
 
     print_fps = True
     saved_users = []
 
-    # Disable log messages
     log = logging.getLogger('werkzeug')
     log.disabled = True
 
