@@ -1,7 +1,3 @@
-#!/usr/bin/env python3
-"""
-Author: Ivan Stepanov <ivanstepanovftw@gmail.com>
-"""
 import http
 import io
 import logging
@@ -14,7 +10,6 @@ from os.path import dirname, realpath
 from typing import Optional
 from zipfile import ZipFile, ZipInfo
 import cv2
-# from flask_latency import Latency
 import numpy as np
 from flask import Flask, Response, request, make_response
 from turbojpeg import TurboJPEG
@@ -22,6 +17,9 @@ from turbojpeg import TurboJPEG
 from wowcube.projector import WOWCube
 from wowcube.utils.exceptions import GetOutOfLoop
 from wowcube.utils.image import Image
+
+
+# использовать URL: http://127.0.0.1:8080/basics/jpg
 
 app = Flask(__name__)
 app.config.update(
@@ -47,9 +45,9 @@ except (FileNotFoundError, OSError):
 W, H = 1920, 1440
 SSP = 240  # screen size pixels
 
-def draw_cubenet(wowcube: Optional[WOWCube]) -> np.ndarray:
+def draw_cubenet() -> np.ndarray:
     img = np.zeros((H, W, 3), np.uint8)
-    cv2.rectangle(img, (0, 0), (W, H), (random.uniform(0, 10), random.uniform(210, 225), random.uniform(240, 255)), -1)
+    cv2.rectangle(img, (0, 0), (W, H), (200, 255, 255), -1)
     cv2.putText(img, 'Hello World!',
                 (10, 600),
                 fontFace=font,
@@ -101,18 +99,14 @@ def draw_screen(mid: int, sid: int, wowcube: Optional[WOWCube]) -> Optional[np.n
 @app.route('/basics/jpg', methods=['GET', 'POST'])
 def basics_jpg():
     user_agent = request.user_agent.string
-    is_init = user_agent not in saved_users  # just to test both draw_cubenet and draw_side
-    saved_users.append(user_agent)
 
     if request.method == 'POST':
         wowcube = WOWCube.from_json(request.data)
     else:
         wowcube = WOWCube.DEFAULT
 
-    if is_init:
-        output_img = draw_cubenet(wowcube)
-    else:
-        output_img = draw_side('front', wowcube)
+    print('drawing wowcube')
+    output_img = draw_cubenet()
 
     if output_img is None:
         return '', http.HTTPStatus.NO_CONTENT
@@ -213,7 +207,6 @@ def basics_multipart_screen():
 if __name__ == '__main__':
 
     print_fps = True
-    saved_users = []
 
     log = logging.getLogger('werkzeug')
     log.disabled = True

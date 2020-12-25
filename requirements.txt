@@ -1,4 +1,5 @@
-numpy
-opencv-python
+numpy==1.14.5
+opencv-python==3.4.2.17
 Flask
 watchdog
+PyTurboJPEG

@@ -30,7 +30,6 @@ class Screen:
 class Module:
     mid: int  # Module ID
     wowcube: 'WOWCube'  # Parent
-    # accel: List[Tuple[float, float, float]]  # Accelerometer
     accel: Tuple[float, float, float]  # Accelerometer
     gyro: Tuple[float, float, float]  # Gyroscope
     screens: List[Screen]
@@ -49,7 +48,7 @@ class WOWCube:
         super().__init__()
         self.modules = modules
 
-    # noinspection PyUnresolvedReferences
+
     def _repair(self) -> 'WOWCube':
         # Fix accel and gyro in each Module
         for mid in range(len(self.modules)):
@@ -75,9 +74,13 @@ class WOWCube:
     @staticmethod
     def json_hook(obj):
         if 'top' in obj:
+            #obj is {'top': [4, 2], 'left': [2, 2]}
             return Screen(**obj)
         if 'screens' in obj:
             return Module(**obj)
+        else:
+            print('obj in hook is ')
+            print(obj)
         return WOWCube(**obj)._repair()
 
     @staticmethod
