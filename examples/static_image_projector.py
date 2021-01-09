@@ -73,6 +73,7 @@ def main():
     response.headers['Content-Type'] = 'image/jpeg'
     return response
 
+# TODO this is UNUSED function 
 # route for the whole cube
 @app.route('/cube', methods=['GET', 'POST'])
 def basics_jpg():
