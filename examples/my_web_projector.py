@@ -8,23 +8,20 @@ from flask import Flask, Response, request, make_response
 from turbojpeg import TurboJPEG
 import numpy as np
 from wowcube.projector import WOWCube
-from wowcube.utils.exceptions import GetOutOfLoop
-from wowcube.utils.image import Image
 
-# использовать URL: http://127.0.0.1:2399/side
+# use URL: http://127.0.0.1:2399/side
 
-# общие настройки приложения
+# basic settings of the app
 app = Flask(__name__)
 app.config.update(
     FAKE_LATENCY_BEFORE=1,
 )
 app.debug = True
 font = cv2.FONT_HERSHEY_SIMPLEX
-boundary = 'frame'  # multipart boundary
+boundary = 'frame'
 root_dir = dirname(dirname(realpath(__file__)))
 turbo_jpeg = None
 
-# загрузка tubrojpeg
 try:
     if platform.system() == "Windows":
         try:
@@ -34,12 +31,12 @@ try:
 except (FileNotFoundError, OSError):
     pass
 
-# размер одного малого куба
+# one small cube size
 SSP = 240
-# размер развертки куба
+# size of the pictire to be drawn on a large cube
 W, H = 1920, 1440
 
-# функция рисует изображение на сторону большого куба
+# function draws a picture on one side of the cube
 def draw_side(side: str):
     if side == "front":
         img = cv2.imread("pics/mario.jpg")
@@ -47,7 +44,7 @@ def draw_side(side: str):
         return img
     return None
 
-# функция рисует на всех сторонах куба
+# function draws on all sides of the cube
 def draw_cubenet():
     img = np.zeros((H, W, 3), np.uint8)
     cv2.rectangle(img, (0, 0), (W, H), (200, 255, 255), -1)
@@ -60,7 +57,7 @@ def draw_cubenet():
                 bottomLeftOrigin=False)
     return img
 
-# путь для рисования стороны
+# route for single side
 @app.route('/side', methods=['GET', 'POST'])
 def main():
     output_img = draw_side('front')
@@ -76,20 +73,22 @@ def main():
     response.headers['Content-Type'] = 'image/jpeg'
     return response
 
-# путь для рисования всего куба
+# route for the whole cube
 @app.route('/cube', methods=['GET', 'POST'])
 def basics_jpg():
-    user_agent = request.user_agent.string
-    # срабатывает при ПЕРВОМ запуске эмулятора
+    # request data is similar to DEFAULT
     if request.method == 'POST':
+        print("========\nPOST request got")
         print('loading cube from json')
-        print(f"request data is {request.data}")
-        wowcube = WOWCube.from_json(request.data)
+        wowcube = WOWCube().from_json(request.data)
     else:
+        print("========\nGET request got")
         print('loading default cube')
-        wowcube = WOWCube.DEFAULT
+        wowcube = WOWCube().load_DEFAULT()
+        print(f"wowcube type is {type(wowcube)}")
 
-    print('drawing cube')
+
+    print(f"WOWCUBE modules are {wowcube.modules}")
     output_img = draw_cubenet()
 
     if output_img is None:
@@ -105,7 +104,6 @@ def basics_jpg():
     response = make_response(buffer)
     response.headers['Content-Type'] = 'image/jpeg'
     return response
-
 
 
 if __name__ == '__main__':
