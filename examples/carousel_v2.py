@@ -8,7 +8,7 @@ import time
 import json
 
 '''
-Just a single square moving around the cube horizontally
+Just a single square moving around the cube vertically
 '''
 
 
@@ -60,13 +60,20 @@ class ImgProcessor(Thread):
         # color of background
         bg_color = (255, 0, 0)
         # starting position of a moving square
-        x_pos = 600
-        y_pos = 0
+        start_x_pos = 480
+        start_y_pos = 240
+        # changing position of a moving square
+        x_pos = start_x_pos
+        y_pos = start_y_pos
         # length of a side of a cube
         sq_side = 100
         # previous position of a cube
         prev_x_pos = None
         prev_y_pos = None
+        # the direction where the square has to move
+        direction = None
+        # list of previous directions
+        circle = []
 
         # x axis goes upward, y axis goes to the right
         # the origin is at (480, 0)
@@ -84,24 +91,80 @@ class ImgProcessor(Thread):
         cv2.rectangle(img, (480, 480), (0, 960), bg_color, -1)
 
         while True:
-            # drawing a square
+
+            print(f"\nx_pos {x_pos}")
+            print(f"y_pos {y_pos}")
+            print(f"direction {direction}\n")
+
+            if (x_pos < 960) and (y_pos < 480):
+                print("on left")
+                if direction not in circle:
+                    print("changing to up")
+                    direction = "up"
+                    circle.append(direction)
+            else:
+                if direction == "up":
+                    direction = None
+
+            if (x_pos > 960) and (y_pos < 960):
+                print("on top")
+                if direction not in circle:
+                    print("changing to right")
+                    x_pos = 1080
+                    y_pos = 480
+                    direction = "right"
+                    circle.append(direction)
+            else:
+                if direction == "right":
+                    direction = None
+
+            if (y_pos > 960) and (x_pos > 480):
+                print("on right")
+                if direction not in circle:
+                    print("changing to down")
+                    y_pos = 1080
+                    x_pos = 960 - sq_side
+                    direction = "down"
+                    circle.append(direction)
+            else:
+                if direction == "down":
+                    direction = None
+
+            if x_pos < 480:
+                print("on bottom")
+                if direction not in circle:
+                    print("changing to left")
+                    x_pos = 240
+                    y_pos = 960 - sq_side
+                    direction = "left"
+                    circle.append(direction)
+            else:
+                if direction == "left":
+                    direction = None
+
             cv2.rectangle(img, (x_pos, y_pos), (x_pos + sq_side, y_pos + sq_side), sq_color, -1)
-            # hiding a "trace" of a square
-            # drawing another square of background color on it's previous position
             if prev_x_pos is not None and prev_y_pos is not None:
-                cv2.rectangle(img, (prev_x_pos, prev_y_pos), (prev_x_pos + sq_side, prev_y_pos + sq_side), bg_color, -1)
+                cv2.rectangle(img, (prev_x_pos, prev_y_pos), (prev_x_pos + sq_side, prev_y_pos + sq_side), bg_color,
+                              -1)
             prev_x_pos = x_pos
             prev_y_pos = y_pos
-            # moving the square to the right
-            y_pos += sq_side
-            # need a pause to let it all render onto the cube
-            time.sleep(0.1)
-            if y_pos > 1920:
-                y_pos = 0
+            if direction == "up":
+                x_pos += sq_side
+            elif direction == "right":
+                y_pos += sq_side
+            elif direction == "down":
+                x_pos -= sq_side
+            elif direction == "left":
+                y_pos -= sq_side
+            if (y_pos < 480) and (x_pos < 480):
+                print("cleaning!!!!!!!!!!!!")
+                circle = []
+                x_pos = start_x_pos
+                y_pos = start_y_pos
+            time.sleep(0.5)
 
 
 if __name__ == "__main__":
-
     # starting a thread that constantly draws image on cube sides
     # independently from request handler
     parallel_processor = ImgProcessor()
