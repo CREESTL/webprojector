@@ -31,8 +31,7 @@ def copy_imgs(target):
         except Exception:
             pass
 
-target = r'C:\Users\User\Documents\wowcube\sides'
-i = 0
+target = r'C:\Users\Dan\Documents\WOWCube\sides'
 if __name__ == '__main__':
     while True:
         copy_imgs(target)

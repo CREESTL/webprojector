@@ -1,17 +1,8 @@
-from flask import Flask, send_file, Response, request, stream_with_context, make_response, render_template, jsonify
-import zipfile
-from os.path import dirname, realpath
-from math import fabs
-import platform
-from zipfile import ZipFile, ZIP_DEFLATED, ZipInfo
+from flask import Flask,request, make_response
 import numpy as np
 from turbojpeg import TurboJPEG
 import cv2
 import logging
-import io
-import sys
-import os
-import random
 from threading import Thread
 import json
 
