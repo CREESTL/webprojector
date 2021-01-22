@@ -6,6 +6,13 @@ import logging
 from threading import Thread
 import json
 
+'''
+
+Drawing each module with different color 
+Understanding the modules coordinates 
+
+'''
+
 # basic Flask settings
 app = Flask(__name__)
 app.config.update(
