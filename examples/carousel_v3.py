@@ -7,6 +7,8 @@ import time
 
 '''
 Two squares moving around the cube
+
+Author: CREESTL (kroymw3@yandex.ru)
 '''
 
 

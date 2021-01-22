@@ -10,7 +10,11 @@ import numpy as np
 from wowcube.projector import WOWCube
 
 """
+
 Program loads up an image from PC and projects it onto the cube via response
+
+Author: CREESTL (kroymw3@yandex.ru)
+
 """
 
 # use URL: http://127.0.0.1:2399/side
@@ -51,7 +55,6 @@ def draw_side(side: str):
 # route for single side
 @app.route('/side', methods=['GET', 'POST'])
 def main():
-    wowcube = WOWCube().from_json(request.data)
     output_img = draw_side('front')
     if output_img is None:
         return '', http.HTTPStatus.NO_CONTENT

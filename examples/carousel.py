@@ -9,6 +9,8 @@ import json
 
 '''
 Just a single square moving around the cube horizontally
+
+Author: CREESTL (kroymw3@yandex.ru)
 '''
 
 

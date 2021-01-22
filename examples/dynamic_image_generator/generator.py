@@ -4,8 +4,14 @@ from shutil import copyfile
 import time
 
 
+'''
+Program displays different images onto the cube's sides using file system (FS)
 
-# функция возвращает пути к исходным фото
+Author: CREESTL (kroymw3@yandex.ru)
+'''
+
+
+# function returns paths to original images of numbers
 def get_full_paths():
     current_dir = os.path.join(os.getcwd(), 'pics')
     names = os.listdir("./pics")
@@ -14,13 +20,16 @@ def get_full_paths():
         full_paths.append(os.path.join(current_dir, name))
     return full_paths
 
-# фукнция создает список названий новых фото (расположены в произвольном порядке)
+
+# function creates a shuffled list of new images names
+# in order for the emulator to see the changes if FS
 def mix_new_names():
     new_names = sorted(['up.jpg', 'down.jpg', 'front.jpg', 'back.jpg', 'left.jpg', 'right.jpg'])
     random.shuffle(new_names)
     return new_names
 
-# функция копирует исходные фото по новым путям
+
+# function copies original images to new locations
 def copy_imgs(target):
     full_paths = get_full_paths()
     new_names = mix_new_names()
@@ -33,10 +42,12 @@ def copy_imgs(target):
         except Exception:
             pass
 
-target = r'C:\Users\Dan\Documents\WOWCube\sides'
+
+# works for Windows
+target = os.path.expanduser('~\Documents\WOWCube\sides')
 if __name__ == '__main__':
     while True:
         copy_imgs(target)
-        # эмулятор выдает максимум 1fps - подстраиваемся под эту величину
+        # the emulator max FPS is 1
         time.sleep(1)
 
