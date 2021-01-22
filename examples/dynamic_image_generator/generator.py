@@ -3,6 +3,8 @@ import random
 from shutil import copyfile
 import time
 
+
+
 # функция возвращает пути к исходным фото
 def get_full_paths():
     current_dir = os.path.join(os.getcwd(), 'pics')

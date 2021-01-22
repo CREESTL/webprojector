@@ -1,6 +1,12 @@
 import json
 
 
+"""
+This version of projector is UNFINISHED
+LOTS OF BUGS!
+"""
+
+
 # Single little screen
 class Screen:
 
@@ -35,6 +41,7 @@ class WOWCube(Module):
         super().__init__()
         self.modules = [Module() for i in range(8)]
 
+    # function creates a cube with default settings
     def load_DEFAULT(self):
         default_data = '''{
         "modules":[
@@ -83,10 +90,8 @@ class WOWCube(Module):
         DEFAULT = self.from_json(default_data)
         return DEFAULT
 
-    # Function fills all the list of modules
+    # Function creates default settings for the cube
     def _repair(self):
-        print(f"in repair")
-        print(f"modules are {self.modules}")
         # Fix accel and gyro in each Module
         for mid in range(len(self.modules)):
             self.modules[mid].accel = tuple(map(float, self.modules[mid].accel))
@@ -108,25 +113,32 @@ class WOWCube(Module):
                     self.modules[mid].screens[sid].left[1]]
         return self
 
-    # Loads different components
-    @staticmethod
-    def json_hook(data_part):
+    # Decodes json data in different ways (one for each part of cube)
+    """
+    At every level of the json tree walk, the object_hook mechanism expects you to return a dictionary, 
+    so if you want to change the subdictionaries into class instances, you have to replace the current 
+    object_hook function invocation's input dictionary values with objects, and not just return the object instances.
+    """
+    def json_hook(self, data_part):
+        # data parts form a TREE not a LIST
         # loading one of screens
+        # TODO: does it male sense to load Screens and Module if we can just load the whole Cube via last "else" statement???
         if 'top' in data_part:
-            return Screen(data_part)
+            data_part['top'] = Screen(data_part)
+            return data_part
         # loading module of several screens
         if 'screens' in data_part:
-            return Module(data_part)
+            data_part['screens'] = Module(data_part)
+            return data_part
         else:
-            # if there is no data in the request - load hardcoded data
+            # {'modules': [{'screens': <wowcube.projector.Module object....
+            # loading the whole cube object
             print("repairing")
-            return WOWCube()._repair()
+            return self._repair()
 
     # Loads cube from JSON file
     def from_json(self, data):
-        # json_hook takes the "data" as an input
-        # json_hook is applied on each element of "data"
-        return json.loads(data, object_hook=WOWCube.json_hook)
+        return json.loads(data, object_hook=self.json_hook)
 
 
 
