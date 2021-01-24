@@ -2,15 +2,20 @@ from flask import Flask,request, make_response
 import numpy as np
 from turbojpeg import TurboJPEG
 import cv2
+import io
 import logging
+from zipfile import ZipFile, ZipInfo
+import zipfile
 from threading import Thread
 import json
-
+from .coords_transform import Transformer
 '''
 
 Drawing each module with different color 
 Understanding the modules coordinates 
 
+
+1) 
 '''
 
 # basic Flask settings
@@ -34,11 +39,57 @@ color_choice = [(255, 255, 0), (255, 0, 0), (0, 255, 0), (0, 0, 255), (0, 255, 2
 # number of chosen color
 color_num = 0
 
+# total number of images
+num_screens = 24
+# total number of modules
+num_modules = 8
+
 # a list of all modules of a cube
 modules = []
 
+def create_images():
+    images = []
+    for i in range(num_screens):
+        img = np.zeros((240, 240, 3), np.uint8)
+        # first module is red
+        if i in range(18, 21):
+            cv2.rectangle(img, (0, 0), (240, 240), (0, 0, 255), -1)
+        else:
+            cv2.rectangle(img, (0, 0), (240, 240), (255, 255, 0), -1)
+        images.append(img)
+    return images
+
+# draws plain green modules correctly
+@app.route('/test', methods=['GET', 'POST'])
+def draw():
+    img_num = 0
+    # create a list of output images (8 modules * 3 images on each)
+    images = create_images()
+    # put the images into the response archive
+    memory_file = io.BytesIO()
+    with ZipFile(memory_file, "w") as zip_file:
+        for module in range(num_modules):
+            for screen in range(num_screens // num_modules):
+                output_img = images[img_num]
+                encode_param = []
+                # encode each of 24 images
+                _, buffer = cv2.imencode('.bmp', output_img, encode_param)
+                # add a specific info about the module this image belongs to
+                # so first 3 images go to the first module, images 4, 5, 6 - to the second etc.
+                zip_info = ZipInfo("modules/" + str(module) + "/screens/" + str(screen) + ".bmp")
+                zip_info.compress_type = zipfile.ZIP_DEFLATED
+                zip_info.compress_size = 1
+                # insert the image into the archive
+                zip_file.writestr(zip_info, buffer)
+                img_num += 1
+    memory_file.seek(0)
+    response = make_response(memory_file.read())
+    response.headers['Content-Type'] = 'application/zip'
+    return response
+
+
 @app.route('/modules', methods=['GET', 'POST'])
-def run_game():
+def draw_modules():
     modules = []
     global return_img
     global img
