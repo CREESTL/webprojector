@@ -11,10 +11,10 @@ class Transformer:
         self.num_screens = 24
         self.num_modules = 8
         self.screens_per_module = self.num_screens // self.num_modules
-         #
-         # if y < 0 -> 1 2 3 4 else 5 6 7 8
-         # if x < 0 -> 1 4 6 7 else 2 3 5 8
-         #
+
+
+
+    # transforms (x, y) to the number of module
     def coords_to_module_num(self, x, y):
         # x goes to the right
         # y goes to us
@@ -59,26 +59,18 @@ class Transformer:
             x = x - 1920
         if x <= -1920:
             x = x + 1920
-        if (x > 0) and (x < 480):
-            # right half, upper side
-            module_x_range = [1, 4]
-        elif (x >= 480) and (x < 960):
-            # right half, down side
-            module_x_range = [2, 7]
-        elif (x >= 960) and (x < 1440):
-            # left half down side
-            module_x_range = [3, 6]
-        elif (x <= -1440) and (x > -1920):
-            # left half, upper side
-            module_x_range = [0, 5]
-        elif (x < 0) and (x > -480):
-            module_x_range = [0, 5]
-        elif (x <= -480) and (x > -960):
-            module_x_range = [3, 6]
-        elif (x <= -960) and (x > -1440):
-            module_x_range = [2, 7]
-        elif (x <= -1440) and (x > -1920):
-            module_x_range = [1, 4]
+        if (x > 0) and (x < 960):
+            # right half
+            module_x_range = [1, 2, 4, 7]
+        elif (x >= 960) and (x < 1920):
+            # left half
+            module_x_range = [0, 3, 5, 6]
+        elif (x < 0) and (x > -960):
+            # left half
+            module_x_range = [0, 3, 5, 6]
+        elif (x <= -960) and (x > -1920):
+            # right half
+            module_x_range = [1, 2, 4, 7]
         elif x == 0:
             # all
             module_x_range = range(8)
@@ -91,6 +83,21 @@ class Transformer:
 
         return module_range
 
+    # transforms (x, y) to coordinates of specific module
+    # FIXME
+    # this whole program works only for default position of modules
+    # if we move the modules - it will display incorrect numbers
+    # for example if we move module 0 up, module 3 will come to its place
+    # but the program will still think that there is module 0 at this place
+    def coords_to_module_coords(self, x, y):
+        module_num = self.coords_to_module_num(x, y)
+        print(f'module num is {module_num}')
+        # x and y coords relative to the module
+        rel_x = x % 240
+        rel_y = y % 240
+        print(f"rel_y = {rel_y}")
+        print(f"rel_x = {rel_x}")
+
 
 transformer = Transformer()
-print(transformer.coords_to_module_num(200, 490))
+transformer.coords_to_module_coords(200, 200)

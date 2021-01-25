@@ -8,14 +8,12 @@ from zipfile import ZipFile, ZipInfo
 import zipfile
 from threading import Thread
 import json
-from .coords_transform import Transformer
+#from coords_transform import Transformer
 '''
 
 Drawing each module with different color 
 Understanding the modules coordinates 
 
-
-1) 
 '''
 
 # basic Flask settings
@@ -51,22 +49,26 @@ def create_images():
     images = []
     for i in range(num_screens):
         img = np.zeros((240, 240, 3), np.uint8)
-        # first module is red
-        if i in range(18, 21):
-            cv2.rectangle(img, (0, 0), (240, 240), (0, 0, 255), -1)
-        else:
-            cv2.rectangle(img, (0, 0), (240, 240), (255, 255, 0), -1)
+        cv2.rectangle(img, (0, 0), (240, 240), (255, 255, 0), -1)
+        cv2.putText(img, str(i), (120, 120), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 2)
         images.append(img)
     return images
 
 # draws plain green modules correctly
 @app.route('/test', methods=['GET', 'POST'])
 def draw():
+    modules = []
     img_num = 0
     # create a list of output images (8 modules * 3 images on each)
     images = create_images()
     # put the images into the response archive
     memory_file = io.BytesIO()
+    for i in range(8):
+        modules.append(request.json['modules'][i])
+    print("modules are")
+    for i, m in enumerate(modules):
+        print(f'module {i} {m}')
+    print("==========\n")
     with ZipFile(memory_file, "w") as zip_file:
         for module in range(num_modules):
             for screen in range(num_screens // num_modules):
@@ -86,25 +88,6 @@ def draw():
     response = make_response(memory_file.read())
     response.headers['Content-Type'] = 'application/zip'
     return response
-
-
-@app.route('/modules', methods=['GET', 'POST'])
-def draw_modules():
-    modules = []
-    global return_img
-    global img
-    if request.method == 'POST' and return_img:
-        # adding each module info to the list
-        for i in range(8):
-            modules.append(request.json['modules'][i])
-        return_img = False
-        print("modules are")
-        for m in modules:
-            print(m)
-        print("==========\n")
-        #return json.dumps(request.json)
-    return_img = True
-    return json.dumps(request.json)
 
 
 # this thread processes the image separately from request handler
