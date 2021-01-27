@@ -4,100 +4,65 @@ Here should be functions for transforming object coordinates to sphero-cubic coo
 
 '''
 
-class Transformer:
+
+import numpy as np
+import cv2
+
+class Screen:
     def __init__(self):
-        self.max_x = 1920
-        self.max_y = 1920
-        self.num_screens = 24
-        self.num_modules = 8
-        self.screens_per_module = self.num_screens // self.num_modules
+        self.surface = np.zeros((240, 240, 3), np.uint8)
+        self.size = 240
+
+    # function gets a clockwise and anticlockwise neighbours of a screen
+    def update_neighbours(self, modules):
+        return
+
+class Module:
+    def __init__(self, num):
+        self.num = num
+        self.screens = [Screen().surface for i in range(3)]
+
+
+    def move_point(self, cur_x, cur_y, screen_num):
+        if screen_num == 0:
+            new_x = cur_x + 10
+            new_y = cur_y + 0
+            return new_x, new_y
+        elif screen_num == 1:
+            new_x = - cur_y
+            new_y = cur_x
+            return new_x, new_y
+
+    # those x and y are relative to module coordinate system
+    def draw_point(self, x, y):
+        # zero screen
+        # origin at lower right corner
+        # y - upwards, x - to the left
+        if (x < 240) and (y < 240):
+            screen = self.screens[0]
+            screen_width = screen.shape[0]
+            screen_height = screen.shape[1]
+            #cv2.circle(screen, (5, 120), 5, (255, 255, 0), 5)
+            cv2.circle(screen, (y, x), 5, (255, 255, 0), 5)
+            return self.screens
+        # first screen
+        # origin at top right corner
+        # y - to the left, x - to us
+        elif (x >= 240) and (y < 240):
+            screen = self.screens[1]
+            screen_width = screen.shape[0]
+            screen_height = screen.shape[1]
+            cv2.circle(screen, (y, x), 5, (255, 255, 0), 5)
+            return self.screens
+        # second screen
+        elif (x < 240) and (y >= 240):
+            screen = self.screens[2]
+            screen_width = screen.shape[0]
+            screen_height = screen.shape[1]
+            cv2.circle(screen, (y, x), 5, (255, 255, 0), 5)
+            return self.screens
 
 
 
-    # transforms (x, y) to the number of module
-    def coords_to_module_num(self, x, y):
-        # x goes to the right
-        # y goes to us
-        module_num = None
-        module_x_range = None
-        module_y_range = None
-        module_range = None
-        if y >= 1920:
-            y = y - 1920
-        if y <= -1920:
-            y = y + 1920
-        if (y > 0) and (y < 480):
-            # front half, upper side
-            module_y_range = [0, 1]
-        elif (y >= 480) and (y < 960):
-            # front half, down side
-            module_y_range = [2, 3]
-        elif (y >= 960) and (y < 1440):
-            # back half down side
-            module_y_range = [6, 7]
-        elif (y >= 1440) and (y < 1920):
-            # back half, upper side
-            module_y_range = [4, 5]
-        elif (y < 0) and (y > -480):
-            # back half, upper side
-            module_y_range = [4, 5]
-        elif (y <= -480) and (y > -960):
-            # back half down side
-            module_y_range = [6, 7]
-        elif (y <= -960) and (y > -1440):
-            # front half, down side
-            module_y_range = [2, 3]
-        elif (y <= -1440) and (y > -1920):
-            # front half, upper side
-            module_y_range = [0, 1]
-        elif y == 0:
-            # all
-            module_y_range = range(8)
 
 
-        if x >= 1920:
-            x = x - 1920
-        if x <= -1920:
-            x = x + 1920
-        if (x > 0) and (x < 960):
-            # right half
-            module_x_range = [1, 2, 4, 7]
-        elif (x >= 960) and (x < 1920):
-            # left half
-            module_x_range = [0, 3, 5, 6]
-        elif (x < 0) and (x > -960):
-            # left half
-            module_x_range = [0, 3, 5, 6]
-        elif (x <= -960) and (x > -1920):
-            # right half
-            module_x_range = [1, 2, 4, 7]
-        elif x == 0:
-            # all
-            module_x_range = range(8)
-
-        print(f'module_x_range = {module_x_range}')
-        print(f'module_y_range = {module_y_range}')
-
-        if (module_y_range is not None) and (module_y_range is not None):
-            module_range = list(set(module_x_range) & set(module_y_range))
-
-        return module_range
-
-    # transforms (x, y) to coordinates of specific module
-    # FIXME
-    # this whole program works only for default position of modules
-    # if we move the modules - it will display incorrect numbers
-    # for example if we move module 0 up, module 3 will come to its place
-    # but the program will still think that there is module 0 at this place
-    def coords_to_module_coords(self, x, y):
-        module_num = self.coords_to_module_num(x, y)
-        print(f'module num is {module_num}')
-        # x and y coords relative to the module
-        rel_x = x % 240
-        rel_y = y % 240
-        print(f"rel_y = {rel_y}")
-        print(f"rel_x = {rel_x}")
-
-
-transformer = Transformer()
-transformer.coords_to_module_coords(200, 200)
