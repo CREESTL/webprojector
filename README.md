@@ -2,4 +2,3 @@
 - `/examples` contains small demo programs that are not used in production
 - `/wowcube` contains core files
 - `/gnomes` contains files of "Gnomes" game (currently developing)
-- `/sbubic_engine` contains sphero-cubic coordinates engine
