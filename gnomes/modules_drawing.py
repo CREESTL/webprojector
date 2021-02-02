@@ -34,6 +34,7 @@ class Module:
         self.screens = [Screen().surface for i in range(3)]
 
     # FIXME decrease x! now it's not changing
+    # FIXME test decrease x with not drawing in circle but in straight lines
 
     # function calculates the number of a screen to work with
     # takes x and y
@@ -53,7 +54,6 @@ class Module:
                 self.temp_screen = 0
                 self.prev_y = y
                 return self.cur_screen, x, y
-            # FIXME bug here!
             elif y >= 240:
                 print("B")
                 # second screen

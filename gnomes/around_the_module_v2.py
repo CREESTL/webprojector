@@ -38,13 +38,13 @@ angle = radians(0)
 # used to skip one quarter of a full circle
 angle_skip = False
 # angular velocity
+# 17.2 degrees
 omega = 0.3
 # start position for a circle
 x = 240
 y = 120
 
 
-# FIXME bug is when x is 220.9873370999506 y is 359.54557423057406 it checks the other if statement and goes to the other part of function and draws again on screen 2
 # function changes circle's coordinates
 def move_circle():
     global x, y, angle, omega, angle_skip
@@ -52,30 +52,28 @@ def move_circle():
     if degrees(angle) >= 360:
         angle = 0
         angle_skip = False
-    # each time angle is increasing
-    print(f'\n\n\nangle is {degrees(angle)}')
+    print(f'\n\n\nold angle is {degrees(angle)}')
+    # we should avoid using angles between 180 and 270 degrees so we skip them
     if (degrees(angle + omega) >= 180) and (angle_skip is False):
-        angle = radians(270)
-        print(f"ZHOPA {(270 - 180) / degrees(omega)}")
-        x = x + radius * omega * ((270 - 180) / degrees(omega)) * cos(angle)
-        y = y + radius * omega * ((270 - 180) / degrees(omega)) * sin(angle)
+        # and make angle more than 270
+        while degrees(angle) <= 270:
+            angle = angle + omega
+            # also calculate new x and y for the skip
+            x = x + radius * omega * cos(angle)
+            y = y + radius * omega * sin(angle)
+        print(f'new angle is {degrees(angle)}')
+        # we only do it once in a round
         angle_skip = True
-        print(f'x is {x} y is {y}')
+        print(f'new x is {x} new y is {y}')
         return x, y
+    # if angle is not between 180 and 270 - everything is much more simple
     angle = angle + omega
+    print(f'new angle is {degrees(angle)}')
     x = x + radius * omega * cos(angle)
     y = y + radius * omega * sin(angle)
     print(f'x is {x} y is {y}')
     return x, y
 
-
-# function changes circle's coordinates
-# def move_circle():
-#     global x, y
-#     y += 10
-#     print()
-#     print(f'x is {x} y is {y}')
-#     return x, y
 
 # with each request module screens are updated
 def update_screens():
