@@ -2,6 +2,13 @@ import numpy as np
 import cv2
 
 
+
+# FIXME
+# screen 0: origin at lower right corner, x - to the right, y - upwards
+# screen 1: origin at upper right corner, x - towards us, y - to the left
+# screen 2: origin at lower left corner, x - upwards, y - to the right
+# Scubic center: origin at origin of 0 screen, x - to the right, y - upwards
+
 # class represents a single screen
 class Screen:
     def __init__(self):
@@ -24,17 +31,11 @@ class Module:
         self.cur_screen = None
         # temporary variable for previous screen
         self.temp_screen = None
-        # if we move from screen 0 to screen 2 - we need to increase X along with Y
-        # else - we need to decrease X while Y is increasing (can be -1, 0, 1)
-        self.increase_x = 0
 
     # function clears all screens
     def clear_screens(self):
         del self.screens
         self.screens = [Screen().surface for i in range(3)]
-
-    # FIXME decrease x! now it's not changing
-    # FIXME test decrease x with not drawing in circle but in straight lines
 
     # function calculates the number of a screen to work with
     # takes x and y
@@ -67,8 +68,6 @@ class Module:
                 if self.prev_screen == 1:
                     if (self.prev_y is not None) and (y > self.prev_y):
                         # moving down the screen
-                        # decreasing X as well
-                        self.increase_x = -1
                         screen = self.screens[self.cur_screen]
                         screen_height = screen.shape[1]
                         screen_width = screen.shape[0]
@@ -76,8 +75,6 @@ class Module:
                         return self.cur_screen, int(x), int(screen_height - (y - 240))
                     elif (self.prev_y is not None) and (y <= self.prev_y):
                         # moving to the right
-                        # not doing anything to x
-                        self.increase_x = 0
                         screen = self.screens[self.cur_screen]
                         screen_width = screen.shape[0]
                         self.prev_y = y
@@ -91,25 +88,32 @@ class Module:
                         if (self.temp_screen is not None) and (self.cur_screen != self.temp_screen):
                             self.prev_screen = self.temp_screen
                         self.temp_screen = 2
-                        # increasing x
-                        self.increase_x = 1
                         screen = self.screens[self.cur_screen]
                         screen_height = screen.shape[1]
                         screen_width = screen.shape[0]
                         self.prev_y = y
-                        return self.cur_screen, int(screen_height - (y - 240)), int(screen_width - (x - 240))
+                        return self.cur_screen, int(screen_width - (y - 240)), int(screen_height - x)
                     elif (self.prev_y is not None) and (y <= self.prev_y):
                         # moving to the right
                         self.cur_screen = 2
                         if (self.temp_screen is not None) and (self.cur_screen != self.temp_screen):
                             self.prev_screen = self.temp_screen
                         self.temp_screen = 2
-                        # npt doing anything to x
-                        self.increase_x = 0
                         screen = self.screens[self.cur_screen]
                         screen_width = screen.shape[0]
                         self.prev_y = y
                         return self.cur_screen, int(x - 240), int(screen_width - (y - 240))
+                # spawning on the 2 screen
+                # FIXME do this part
+                # moving to the right
+                self.cur_screen = 2
+                if (self.temp_screen is not None) and (self.cur_screen != self.temp_screen):
+                    self.prev_screen = self.temp_screen
+                self.temp_screen = 2
+                screen = self.screens[self.cur_screen]
+                screen_width = screen.shape[0]
+                self.prev_y = y
+                return self.cur_screen, int(x - 240), int(screen_width - (y - 240))
         elif x >= 240:
             if y < 240:
                 print("C")
@@ -137,8 +141,6 @@ class Module:
                 if self.prev_screen == 1:
                     if (self.prev_y is not None) and (y > self.prev_y):
                         # moving down the screen
-                        # decreasing X as well
-                        self.increase_x = -1
                         screen = self.screens[self.cur_screen]
                         screen_height = screen.shape[1]
                         screen_width = screen.shape[0]
@@ -146,8 +148,6 @@ class Module:
                         return self.cur_screen, int(screen_width - (x - 240)), int(screen_height - (y - 240)),
                     elif (self.prev_y is not None) and (y <= self.prev_y):
                         # moving to the right
-                        # not doing anything to x
-                        self.increase_x = 0
                         screen = self.screens[self.cur_screen]
                         screen_width = screen.shape[0]
                         self.prev_y = y
@@ -161,8 +161,6 @@ class Module:
                         if (self.temp_screen is not None) and (self.cur_screen != self.temp_screen):
                             self.prev_screen = self.temp_screen
                         self.temp_screen = 2
-                        # increasing x
-                        self.increase_x = 1
                         screen = self.screens[self.cur_screen]
                         screen_height = screen.shape[1]
                         screen_width = screen.shape[0]
@@ -174,8 +172,6 @@ class Module:
                         if (self.temp_screen is not None) and (self.cur_screen != self.temp_screen):
                             self.prev_screen = self.temp_screen
                         self.temp_screen = 2
-                        # npt doing anything to x
-                        self.increase_x = 0
                         screen = self.screens[self.cur_screen]
                         screen_width = screen.shape[0]
                         self.prev_y = y

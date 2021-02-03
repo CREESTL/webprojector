@@ -5,7 +5,7 @@ import io
 import logging
 from zipfile import ZipFile, ZipInfo
 import zipfile
-from gnomes.modules_drawing import Module
+from gnomes.modules import Module
 from math import sin, cos, pi, radians, degrees
 
 '''
@@ -31,7 +31,6 @@ num_modules = 8
 # modules of cube are created ONCE
 modules = []
 
-fixed_x = None
 radius = 120
 # starting angle is 45 degrees
 angle = radians(0)

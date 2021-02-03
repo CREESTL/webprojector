@@ -5,7 +5,7 @@ import io
 import logging
 from zipfile import ZipFile, ZipInfo
 import zipfile
-from gnomes.modules_drawing import Module
+from gnomes.modules import Module
 from math import sin,cos,pi, radians
 
 '''
@@ -33,36 +33,35 @@ num_modules = 8
 # modules of cube are created ONCE
 modules = []
 
-
 # for drawing a circle
 x = 120
 y = 120
-fixed_x = None
+fixed_y = None
 direction = 'up'
 
 # function changes circle's coordinates
 def move_circle():
-    global x, y, direction, fixed_x
+    global x, y, direction, fixed_y
     print(f'x is {x} y is {y}')
     print(f'direction is {direction}')
     if direction == 'up':
-        x += 10
-        if x >= 360:
+        y += 10
+        if y >= 360:
             direction = 'left'
         return x, y
     if direction == 'left':
-        # remember the last x position so that circle can move straight down
-        if fixed_x is None:
-            fixed_x = x
-        y += 10
-        # x must be decreased here as well
-        x -= 10
-        if y >= 360:
+        # remember the last y position so that circle can move straight down
+        if fixed_y is None:
+            fixed_y = y
+        x += 10
+        # y must be decreased here as well
+        y -= 10
+        if x >= 360:
             direction = 'right'
-        return fixed_x, y
+        return fixed_y, y
     if direction == 'right':
-        if y > 120:
-            y -= 10
+        if x > 120:
+            x -= 10
         return x, y
 
 # with each request module screens are updated

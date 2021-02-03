@@ -1,18 +1,16 @@
-from flask import Flask,request, make_response
+from flask import Flask, request, make_response
 import numpy as np
-from turbojpeg import TurboJPEG
 import cv2
 import io
 import logging
 from zipfile import ZipFile, ZipInfo
 import zipfile
-import json
 from gnomes.modules import Module
-import time
+from math import sin, cos, pi, radians, degrees
 
 '''
 
-Drawing using each module's coordinates system
+Testing how changing X works in different cases
 
 '''
 
@@ -25,26 +23,47 @@ app.debug = True
 log = logging.getLogger('werkzeug')
 log.disabled = True
 
-
 # total number of images
 num_screens = 24
 # total number of modules
 num_modules = 8
 
-# a list of all modules of a cube
+# modules of cube are created ONCE
 modules = []
 
+fixed_y = None
 
+# start position for a circle
+# it should be on the 0 or 1 screen
+x = 120
+y = 360
+
+
+# FIXME delete increase x!!!
+
+# function changes circle's coordinates
+def move_circle():
+    global x, y
+    x -= 20
+    print(f'\n\n\nx is {x} y is {y}')
+    return x, y
 
 
 # with each request module screens are updated
 def update_screens():
-    # using all 8 modules of the cube
-    modules = [Module(i) for i in range(8)]
+    global modules
+    # creating 8 modules once
+    if not modules:
+        modules = [Module(i) for i in range(8)]
     screens = []
+    x, y = move_circle()
     for module in modules:
-        for screen in module.draw_point(70, 70):
-            screens.append(screen)
+        filled_screens = module.draw_point(x, y)
+        if filled_screens:
+            for screen in filled_screens:
+                screens.append(screen)
+        # clear all screens of the module
+        module.clear_screens()
     # just to double-check that all 24 screens are present
     while len(screens) != num_screens:
         # filling up the rest of empty screens
@@ -62,14 +81,6 @@ def draw():
     memory_file = io.BytesIO()
     for i in range(8):
         modules.append(request.json['modules'][i])
-    # information about relative position of screens and modules
-    for i, m in enumerate(modules):
-        print(f'MODULE {i}')
-        for j, s in enumerate(m['screens']):
-            print(f'--screen {j}')
-            print(f'----counter clockwise: module {s["top"][0]} screen {s["top"][1]}')
-            print(f'----clockwise: module {s["left"][0]} screen {s["left"][1]}')
-    print("==========\n")
     with ZipFile(memory_file, "w") as zip_file:
         for module in range(num_modules):
             for screen in range(num_screens // num_modules):
@@ -92,7 +103,6 @@ def draw():
 
 
 if __name__ == "__main__":
-
     host = None
     port = 2399
     threaded = True
