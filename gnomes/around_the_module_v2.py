@@ -51,26 +51,21 @@ def move_circle():
     if degrees(angle) >= 360:
         angle = 0
         angle_skip = False
-    print(f'\n\n\nold angle is {degrees(angle)}')
     # we should avoid using angles between 180 and 270 degrees so we skip them
-    if (degrees(angle + omega) >= 180) and (angle_skip is False):
+    if (degrees(angle + omega) >= 270) and (angle_skip is False):
         # and make angle more than 270
-        while degrees(angle) <= 270:
+        while degrees(angle) <= 360:
             angle = angle + omega
             # also calculate new x and y for the skip
             x = x + radius * omega * cos(angle)
             y = y + radius * omega * sin(angle)
-        print(f'new angle is {degrees(angle)}')
         # we only do it once in a round
         angle_skip = True
-        print(f'new x is {x} new y is {y}')
         return x, y
     # if angle is not between 180 and 270 - everything is much more simple
     angle = angle + omega
-    print(f'new angle is {degrees(angle)}')
     x = x + radius * omega * cos(angle)
     y = y + radius * omega * sin(angle)
-    print(f'x is {x} y is {y}')
     return x, y
 
 
@@ -81,13 +76,17 @@ def update_screens():
     if not modules:
         modules = [Module(i) for i in range(8)]
     screens = []
+    # getting new scubic X and Y coordinates of an object
     x, y = move_circle()
     for module in modules:
+        # move the object to the new scubic coordinates
+        module.move(x, y)
+        # draw an object on those coordinates
         filled_screens = module.draw_point(x, y)
         if filled_screens:
             for screen in filled_screens:
                 screens.append(screen)
-        # clear all screens of the module
+        # clear all screens of the module to render on them again later
         module.clear_screens()
     # just to double-check that all 24 screens are present
     while len(screens) != num_screens:
@@ -128,6 +127,7 @@ def draw():
 
 
 if __name__ == "__main__":
+
     host = None
     port = 2399
     threaded = True

@@ -10,7 +10,7 @@ from math import sin,cos,pi, radians
 
 '''
 
-Just a circle moving through all 3 screens of a module
+Just a circle moving through all 3 screens of a module in straight line
 
 '''
 
@@ -36,14 +36,12 @@ modules = []
 # for drawing a circle
 x = 120
 y = 120
-fixed_y = None
 direction = 'up'
 
-# function changes circle's coordinates
+
+# function changes circle's coordinates (goes from screen 0
 def move_circle():
-    global x, y, direction, fixed_y
-    print(f'x is {x} y is {y}')
-    print(f'direction is {direction}')
+    global x, y, direction
     if direction == 'up':
         y += 10
         if y >= 360:
@@ -51,18 +49,21 @@ def move_circle():
         return x, y
     if direction == 'left':
         # remember the last y position so that circle can move straight down
-        if fixed_y is None:
-            fixed_y = y
         x += 10
-        # y must be decreased here as well
-        y -= 10
         if x >= 360:
             direction = 'right'
-        return fixed_y, y
-    if direction == 'right':
-        if x > 120:
-            x -= 10
         return x, y
+    if direction == 'right':
+        x -= 10
+        if x <= 120:
+            direction = 'down'
+        return x, y
+    if direction == 'down':
+        y -= 10
+        if y <= 120:
+            direction = 'up'
+        return x, y
+
 
 # with each request module screens are updated
 def update_screens():
@@ -71,13 +72,17 @@ def update_screens():
     if not modules:
         modules = [Module(i) for i in range(8)]
     screens = []
+    # getting new scubic X and Y coordinates of an object
     x, y = move_circle()
     for module in modules:
+        # move the object to the new scubic coordinates
+        module.move(x, y)
+        # draw an object on those coordinates
         filled_screens = module.draw_point(x, y)
         if filled_screens:
             for screen in filled_screens:
                 screens.append(screen)
-        # clear all screens of the module
+        # clear all screens of the module to render on them again later
         module.clear_screens()
     # just to double-check that all 24 screens are present
     while len(screens) != num_screens:

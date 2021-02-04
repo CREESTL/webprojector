@@ -5,7 +5,7 @@ class Scubo:
         # list of two coordinates: x and y
         self.coords = [int, int]
         # in this order screens are to be processed
-        self.screens_order = [0, 2, 1]
+        self.screens_order = [0, 1, 2]
 
     # function moves the object using ONE coordinate
     # coord - module of coordinate we move to
@@ -49,5 +49,5 @@ class Scubo:
         return self.coords[1]
 
     # function returns the number of current screen of a module
-    def cur_screen(self):
+    def get_cur_screen(self):
         return self.screens_order[self.cur_screen]
