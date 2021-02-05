@@ -11,9 +11,11 @@ class Screen:
 
 # class represents a single module
 class Module:
-    def __init__(self, num):
+    def __init__(self, num, trbl):
         # a number of module (max 8)
         self.num = num
+        # table of relative positions of modules and screens
+        self.trbl = trbl
         # three screens of a module
         self.screens = [Screen().surface for i in range(3)]
         # number of current screen
@@ -80,7 +82,7 @@ class Module:
         return self.screens_order[self.cur_screen], self.coords[0], self.coords[1]
 
     # function draws a circle using module coordinates system
-    def draw_point(self, x, y):
+    def draw_point(self):
         color = (255, 255, 0)
         r = 10
         thickness = 8
@@ -88,10 +90,15 @@ class Module:
         screen_number, x, y = self.get_attributes()
         if screen_number is not None:
             screen = self.screens[screen_number]
+            print(f'x is {x} y is {y}')
             cv2.circle(screen, (int(x), int(y)), r, color, thickness)
             return self.screens
         else:
             return []
+
+    # function calculates position of an object located on another module relative to current module origin
+    def recalc_pos(self):
+        pass
 
 
 

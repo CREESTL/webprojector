@@ -12,7 +12,7 @@ import time
 
 '''
 
-Drawing using each module's coordinates system
+Getting relative positions of screens and modules from trbl
 
 '''
 
@@ -31,39 +31,56 @@ num_screens = 24
 # total number of modules
 num_modules = 8
 
-# a list of all modules of a cube
-modules = []
+
+# function forms a table of relative positions of module
+def form_trbl(req):
+    trbl = []
+    for i in range(8):
+        trbl.append(req.json['modules'][i])
+    return trbl
 
 
+# function forms a list of modules
+def form_modules(req):
+    modules = []
+    # creating a table of relative positions
+    trbl = form_trbl(req)
+    for i, module in enumerate(trbl):
+        modules.append(Module(i, trbl))
+    return modules
 
 
 # with each request module screens are updated
-def update_screens():
-    # using all 8 modules of the cube
-    modules = [Module(i) for i in range(8)]
+def update_screens(modules):
     screens = []
     for module in modules:
-        for screen in module.draw_point(70, 70):
-            screens.append(screen)
+        # move the object to the new scubic coordinates
+        module.move(120, 120)
+        # draw an object on those coordinates
+        filled_screens = module.draw_point()
+        if filled_screens:
+            for screen in filled_screens:
+                screens.append(screen)
+        # clear all screens of the module to render on them again later
+        module.clear_screens()
     # just to double-check that all 24 screens are present
     while len(screens) != num_screens:
         # filling up the rest of empty screens
         screens.append(np.zeros((240, 240, 3), np.uint8))
     return screens
 
-
 @app.route('/test', methods=['GET', 'POST'])
 def draw():
-    modules = []
     img_num = 0
+    trbl = form_trbl(request)
+    # creating 8 modules
+    modules = form_modules(request)
     # create a list of output images (8 modules * 3 images on each)
-    images = update_screens()
+    images = update_screens(modules)
     # put the images into the response archive
     memory_file = io.BytesIO()
-    for i in range(8):
-        modules.append(request.json['modules'][i])
     # information about relative position of screens and modules
-    for i, m in enumerate(modules):
+    for i, m in enumerate(trbl):
         print(f'MODULE {i}')
         for j, s in enumerate(m['screens']):
             print(f'--screen {j}')
