@@ -2,6 +2,13 @@ import numpy as np
 import cv2
 
 
+'''
+
+Main file with all functions of the cube
+
+'''
+
+
 # class represents a single screen
 class Screen:
     def __init__(self):
@@ -11,11 +18,9 @@ class Screen:
 
 # class represents a single module
 class Module:
-    def __init__(self, num, trbl):
+    def __init__(self, num):
         # a number of module (max 8)
         self.num = num
-        # table of relative positions of modules and screens
-        self.trbl = trbl
         # three screens of a module
         self.screens = [Screen().surface for i in range(3)]
         # number of current screen
@@ -24,6 +29,13 @@ class Module:
         self.coords = [int, int]
         # in this order screens are to be processed
         self.screens_order = [0, 1, 2]
+
+    # function draws an object using scubic coordinates of the module
+    def update_screens(self, x, y):
+        self.move(x, y)
+        # draw an object on those coordinates
+        self.screens = self.draw_point()
+        return self.screens
 
     # function clears all screens
     def clear_screens(self):
@@ -56,7 +68,7 @@ class Module:
             # indicates that we did not move to the other screen
             return False
 
-    # function moves the object to the given coordinates
+    # function moves the object to the given TWO coordinates
     def move(self, x, y):
         # if we changed X and moved to the other screen then we change axes places
         if self.step(x, 0):
@@ -90,11 +102,27 @@ class Module:
         screen_number, x, y = self.get_attributes()
         if screen_number is not None:
             screen = self.screens[screen_number]
-            print(f'x is {x} y is {y}')
             cv2.circle(screen, (int(x), int(y)), r, color, thickness)
             return self.screens
         else:
             return []
+
+
+# class represents the whole cube of 8 modules and 24 screens
+class Cube:
+    def __init__(self, request):
+        self.num_screens = 24
+        self.num_modules = 8
+        self.trbl = self.update_trbl(request)
+        self.modules = [Module(i) for i in range(self.num_screens)]
+
+    # function forms a table of relative positions of module
+    @staticmethod
+    def update_trbl(request):
+        trbl = []
+        for i in range(8):
+            trbl.append(request.json['modules'][i])
+        return trbl
 
     # function calculates position of an object located on another module relative to current module origin
     def recalc_pos(self):
@@ -107,6 +135,3 @@ class Module:
                 print(f'----clockwise: module {s["left"][0]} screen {s["left"][1]}')
         print("==========\n")
         pass
-
-
-
