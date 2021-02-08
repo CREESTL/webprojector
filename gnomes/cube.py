@@ -1,6 +1,6 @@
 import numpy as np
 import cv2
-
+from collections import deque
 
 '''
 
@@ -113,25 +113,177 @@ class Cube:
     def __init__(self, request):
         self.num_screens = 24
         self.num_modules = 8
+        self.num_sides = 6
         self.trbl = self.update_trbl(request)
+        self.grid = self.update_grid()
         self.modules = [Module(i) for i in range(self.num_screens)]
 
     # function forms a table of relative positions of module
     @staticmethod
     def update_trbl(request):
-        trbl = []
+        # first of all, all information from request we put into list of json strings
+        json = []
         for i in range(8):
-            trbl.append(request.json['modules'][i])
+            json.append(request.json['modules'][i])
+        # this is a table of relative screens positions
+        # it has such format:
+        # {num_module: {num_screen: [[module_counter-clockwise, screen_counter-clockwise], [module_clockwise, screen_clockwise]]...}
+        # so it basically shows which screen of which module is located clockwise and counter-clockwise relative to the given screen of the given module
+        trbl = {}
+        # information about relative position of screens and modules from json into dictionary
+        for i, module in enumerate(json):
+            trbl[i] = {}
+            for j, screen in enumerate(module['screens']):
+                trbl[i][j] = [[screen["top"][0], screen["top"][1]], [screen["left"][0], screen["left"][1]]]
         return trbl
 
+    # function recursively adds all 6 sides to the grid
+    def add_sides(self, grid, side_num, module_num, screen_num):
+        if grid == {}:
+            grid[side_num] = []
+        grid[side_num].append([module_num, screen_num])
+        module = self.trbl[module_num]
+        module_clockwise = module[0][1][0]
+        screen_clockwise = module[0][1][1]
+        if len(grid[side_num]) < 4:
+            self.add_sides(grid, side_num, module_clockwise, screen_clockwise)
+
+    # function forms a "grid" which represents location of each module of the cube
+    # it's more informative then the trbl
+    def update_grid(self):
+        # rules of the grid:
+        # 1) each side of the cube has a number (0-front, 1-top, 2-back, 3-bottom, 4-left, 5-right)
+        # 2) each side consists of 4 screens of 4 modules
+        # 3) modules of the side are numbered clockwise starting from top left module (min - 0, max - 2)
+        # grid has such structure:
+        # {num_side: [[num_module1, num_screen1], [num_module2, num_screen2]]}
+        # TODO сделать через рекурсию: беру нулевой экран, потом справа, у этого модуля беру первый экран и к нему все то же самое (рекурсия) а к оставшимся на первой стороне просто по часовой делаю
+        grid = {}
+        module_num = 0
+        screen_num = 0
+        side_num = 0
+        self.add_sides(grid, side_num, module_num, screen_num, )
+        print(f'grid is {grid}')
+        return grid
+
+
     # function calculates position of an object located on another module relative to current module origin
-    def recalc_pos(self):
-        # information about relative position of screens and modules
-        for i, m in enumerate(self.trbl):
-            print(f'MODULE {i}')
-            for j, s in enumerate(m['screens']):
-                print(f'--screen {j}')
-                print(f'----counter clockwise: module {s["top"][0]} screen {s["top"][1]}')
-                print(f'----clockwise: module {s["left"][0]} screen {s["left"][1]}')
-        print("==========\n")
-        pass
+    # initial module - the module where the object is currently located
+    # x, y - scubic coordinates of the object on the module
+    # compared_module - the module which scubic coordinates system we use to recalculate coordinates (x, y)
+    # returns x', y' of the compared_module coordinates system
+    def recalc_pos(self, initial_module, x, y, compared_module):
+        rotate_times = self.shortest_path(initial_module, compared_module)
+        for i in range(rotate_times):
+            x, y = y, -x
+        print(f'NEW IS {x} {y}')
+        return x, y
+
+    # function looks for a module in three parts of the cube
+    # returns the half where the module was found
+    def check_halfs(self, initial_module_num, compared_module_num):
+        upper_half = []
+        left_half = []
+        front_half = []
+        module = self.trbl[initial_module_num]
+
+        # horizontal upper half clockwise
+        screen_num = 1
+        for i in range(4):
+            hor_clockwise = module[screen_num][1][0]
+            upper_half.append(hor_clockwise)
+            if hor_clockwise == compared_module_num:
+                return upper_half, 1, i,
+            module = self.trbl[hor_clockwise]
+            if screen_num == 1:
+                screen_num = 2
+            else:
+                screen_num = 1
+
+        # vertical left half clockwise
+        screen_num = 2
+        for i in range(4):
+            vert_clockwise_left = module[screen_num][1][0]
+            left_half.append(vert_clockwise_left)
+            if vert_clockwise_left == compared_module_num:
+                return left_half, 2, i
+            module = self.trbl[vert_clockwise_left]
+            if screen_num == 2:
+                screen_num = 1
+            else:
+                screen_num = 2
+
+        # vertical front half clockwise
+        screen_num = 0
+        for i in range(4):
+            vert_clockwise_front = module[screen_num][1][0]
+            front_half.append(vert_clockwise_front)
+            if vert_clockwise_front == compared_module_num:
+                return front_half, 0, i
+            module = self.trbl[vert_clockwise_front]
+
+        return None, -1
+
+    def shortest_path(self, initial_module_num, compared_module_num):
+        half, half_num, i = self.check_halfs(initial_module_num, compared_module_num)
+        print(f'found if half number {half_num}')
+        print(f'half is {half}')
+        print(f'in half number of module is {i}')
+        rotate_times = 0
+        if (i == 0) or (i == 2):
+            rotate_times = 1
+        if i == 1:
+            rotate_times = 2
+        if i == -1:
+            rotate_times = 0
+        return rotate_times
+
+
+    # def shortest_path(self, initial_module, compared_module):
+    #     checked = []
+    #     queue = deque()
+    #     queue.append(initial_module)
+    #     dist = 0
+    #     times_rotate = 0
+    #
+    #     # for i in range(4):
+    #     while queue:
+    #         # extracting a module from the left end of the queue
+    #         module = queue.popleft()
+    #         print(f'\n\nmodule is {module}')
+    #         if module not in checked:
+    #             # if module is the one we are looking for - finish
+    #             if module == compared_module:
+    #                 print('FOUND!!!')
+    #                 print(f'distance is {dist}')
+    #                 print("============")
+    #                 break
+    #             # else - add all module neighbours to the queue
+    #             else:
+    #                 trbl_module = self.trbl[module]
+    #                 print(f'trbl_module is {trbl_module}')
+    #                 anticlockwise = trbl_module[0][0][0]
+    #                 clockwise = trbl_module[0][1][0]
+    #                 back = trbl_module[1][1][0]
+    #                 print(f'clockwise is {clockwise}')
+    #                 print(f'anticlockwise is {anticlockwise}')
+    #                 print(f'back is {back}')
+    #                 queue.append(clockwise)
+    #                 queue.append(anticlockwise)
+    #                 queue.append(back)
+    #                 checked.append(module)
+    #                 print(f'queue is {queue}')
+    #                 print("============")
+    #                 dist += 240
+    #
+    #     if dist == 1:
+    #         times_rotate = 1
+    #     elif (dist > 1) and (dist < 7):
+    #         times_rotate = 2
+    #         dist = 1
+    #     elif dist == 7:
+    #         # FIXME not sure
+    #         times_rotate = 1
+
+
+
