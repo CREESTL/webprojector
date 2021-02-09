@@ -80,11 +80,12 @@ def draw():
     img_num = 0
 
     # FIXME test this on different cases
-    # FIXME now only works for 0 screens???
-    # for (0, 120, 60, 2) should return (-120, -60) - works
-    # for (0, 360, 120, 1) should return (-360, -120) NOT SURE
-    # for (0, 60, 400, 5) should return (560, 60) - doesn't work
-    #cube.recalc_pos(1, 60, 400, 5)
+    # FIXME make it works with one module like (0, 120, 120, 0)
+    # for (0, 120, 60, 2) should return (-120, -60)
+    # for (0, 360, 120, 1) should return (-360, -120)
+    # for (0, 60, 400, 5) should return (560, 60)
+    # for (0, 120, 120, 7) should return (-840, -120)
+    cube.recalc_pos(0, 60, 400, 6)
 
 
     with ZipFile(memory_file, "w") as zip_file:
