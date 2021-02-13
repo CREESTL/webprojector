@@ -37,55 +37,44 @@ x = 240
 y = 120
 
 
-# function changes circle's coordinates
-def move_circle():
-    global x, y, angle, omega, angle_skip
-    # starting a new circle
-    if degrees(angle) >= 360:
-        angle = 0
-        angle_skip = False
-    # we should avoid using angles between 180 and 270 degrees so we skip them
-    if (degrees(angle + omega) >= 270) and (angle_skip is False):
-        # and make angle more than 270
-        while degrees(angle) <= 360:
-            angle = angle + omega
-            # also calculate new x and y for the skip
-            x = x + radius * omega * cos(angle)
-            y = y + radius * omega * sin(angle)
-        # we only do it once in a round
-        angle_skip = True
-        return x, y
-    # if angle is not between 180 and 270 - everything is much more simple
-    angle = angle + omega
-    x = x + radius * omega * cos(angle)
-    y = y + radius * omega * sin(angle)
-    return x, y
 
-
+# function is used for debug
+# in draws all axes, number of module and number of screen of the module
 @app.route('/test', methods=['GET', 'POST'])
-def draw():
-    # moving the object with each request
-    x, y = move_circle()
+def draw_coords():
     # images to be put it zip archive
     images = []
     # creating a cube to work with
     cube = Cube(request)
-    # all modules of the cube
-    modules = cube.modules
-    for module in modules:
-        for img in module.update_screens(x, y):
+    for module in range(cube.num_modules):
+        for screen in range(3):
+            img = np.zeros((240, 240, 3), np.uint8)
+            img = cv2.putText(img, f'm: {module} s: {screen}', (30, 100), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2,
+                              cv2.LINE_AA)
+            img = cv2.rotate(img, cv2.ROTATE_180)
+            if screen == 0:
+                # Y axis
+                img = cv2.line(img, (20, 20), (20, 240), (0, 255, 255), 10)
+                # X axis
+                img = cv2.line(img, (20, 20), (240, 20), (255, 255, 0), 10)
             images.append(img)
     # put the images into the response archive
     memory_file = io.BytesIO()
     img_num = 0
 
     # FIXME test this on different cases
-    # FIXME make it works with one module like (0, 120, 120, 0)
-    # for (0, 120, 60, 2) should return (-120, -60)
-    # for (0, 360, 120, 1) should return (-360, -120)
-    # for (0, 60, 400, 5) should return (560, 60)
-    # for (0, 120, 120, 7) should return (-840, -120)
-    cube.recalc_pos(0, 60, 400, 6)
+    # DEFAULT POSITIONS OF MODULES
+    # for (0, 60, 120, 4) should return (-900, 120)# works with  x = -(960 - x),  |  x, y = -x, (480 - y)  AND # works with x = -(960 - x),  |   if i == 0: x, y = 960 - y, 960 + x else x, y = y, -x
+    # for (0, 60, 120, 5) should return (840, 60)# works with x = -(960 - x),  |   if i == 0: x, y = 960 - y, 960 + x else x, y = y, -x
+    # for (0, 60, 120, 6) should return (60, -840)# works with x = -(960 - x),  |   if i == 0: x, y = 960 - y, 960 + x else x, y = y, -x
+    # for (0, 60, 120, 7) should return (-840, -60)# works with x = -(960 - x),  |   if i == 0: x, y = 960 - y, 960 + x else x, y = y, -x
+    # for (0, 60, 400, 5) should return (560, 60)# works with x = -(960 - x),  |   if i == 0: x, y = 960 - y, 960 + x else x, y = y, -x
+    # for (0, 360, 20, 5) should return (600, 460) # works with  x = -(960 - x),  |  x, y = -x, (480 - y) AND # works with x = -(960 - x),  |   if i == 0: x, y = 960 - y, 960 + x else x, y = y, -x
+
+    # for (1, 60, 120, 0) should return (-120, 60) # works
+    # 
+    new_x, new_y = cube.recalc_pos(1, 60, 120, 0)
+    print(f'new X is {new_x}, new Y is {new_y}')
 
 
     with ZipFile(memory_file, "w") as zip_file:

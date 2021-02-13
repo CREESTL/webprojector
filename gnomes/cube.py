@@ -11,9 +11,11 @@ Main file with all functions of the cube
 
 # class represents a single screen
 class Screen:
-    def __init__(self):
+    def __init__(self, num):
         # all objects are projected on its surface
         self.surface = np.zeros((240, 240, 3), np.uint8)
+        # the number of a screen on the module
+        self.num = num
 
 
 # class represents a single module
@@ -22,7 +24,7 @@ class Module:
         # a number of module (max 8)
         self.num = num
         # three screens of a module
-        self.screens = [Screen().surface for i in range(3)]
+        self.screens = [Screen(i).surface for i in range(3)]
         # number of current screen
         self.cur_screen = 0
         # list of two coordinates: x and y
@@ -40,7 +42,7 @@ class Module:
     # function clears all screens
     def clear_screens(self):
         del self.screens
-        self.screens = [Screen().surface for i in range(3)]
+        self.screens = [Screen(i).surface for i in range(3)]
 
     # function moves the object using ONE coordinate
     # coord - module of coordinate we move to
@@ -115,7 +117,8 @@ class Cube:
         self.num_modules = 8
         self.num_sides = 6
         self.trbl = self.update_trbl(request)
-        self.modules = [Module(i) for i in range(self.num_screens)]
+        self.grid = self.update_grid()
+        self.modules = [Module(i) for i in range(self.num_modules)]
 
     # function forms a table of relative positions of module
     @staticmethod
@@ -136,6 +139,121 @@ class Cube:
                 trbl[i][j] = [[screen["top"][0], screen["top"][1]], [screen["left"][0], screen["left"][1]]]
         return trbl
 
+    # function gets the number of start module and start screen and forms a list of 4 modules and their screens
+    # located on the same side of the cube
+    def form_side(self, module_num, screen_num):
+        i = 0
+        side = []
+        while i < 4:
+            # adding current module to list
+            side.append([module_num, screen_num])
+            try:
+                # extracting module and it's screen clockwise to current module
+                module_clockwise = self.trbl[module_num][screen_num][1][0]
+                screen_clockwise = self.trbl[module_num][screen_num][1][1]
+                # switching to the new module
+                module_num = module_clockwise
+                screen_num = screen_clockwise
+                i += 1
+            except KeyError:
+                pass
+        return side
+
+
+    # function returns the screen on the right side of the current module
+    # it "looks" around the right corner
+    # increasing by 1 ONLY works for up right corner
+    def right_screen(self, screen):
+        if screen == 0:
+            return 1
+        elif screen == 1:
+            return 2
+        elif screen == 2:
+            return 0
+
+    # function returns the screen upwards from the current module screen
+    # it "looks" around the up corner
+    # works ONLY for up right corner
+    def up_screen(self, screen):
+        if screen == 0:
+            return 2
+        elif screen == 1:
+            return 0
+        elif screen == 2:
+            return 1
+
+    # function returns the screen downwards from tje current module screen
+    # it "looks" around the down corner
+    # works ONLY for lower left corner
+    def down_screen(self, screen):
+        if screen == 0:
+            return 2
+        elif screen == 1:
+            return 0
+        elif screen == 2:
+            return 1
+
+
+    # front - 0; up - 1; left - 2; right - 3; back - 4; down - 5;
+    def update_grid(self):
+        grid = {}
+
+        # FRONT SIDE
+        grid[0] = self.form_side(0, 0)
+
+        # DOWN SIDE
+        # take the lower left module of the front side and process it
+        # it will form down side
+        new_module = grid[0][3][0]
+        new_screen = self.down_screen(grid[0][3][1])
+        grid[5] = self.form_side(new_module, new_screen)
+
+        # RIGHT SIDE
+        # take the upper right module of front side and process it
+        # it will form right side
+        new_module = grid[0][1][0]
+        new_screen = self.right_screen(grid[0][1][1])
+        grid[3] = self.form_side(new_module, new_screen)
+
+        # BACK SIDE
+        # take the upper right module of the right side and process it
+        # it will form back side
+        new_module = grid[3][1][0]
+        new_screen = self.right_screen(grid[3][1][1])
+        grid[4] = self.form_side(new_module, new_screen)
+
+        # LEFT SIDE
+        # take the upper right module of the back side and process it
+        # it will form right side
+        new_module = grid[4][1][0]
+        new_screen = self.right_screen(grid[4][1][1])
+        grid[2] = self.form_side(new_module, new_screen)
+
+        # UP SIDE
+        # take the upper right module of the back side and process it
+        # it will form up side
+        new_module = grid[4][1][0]
+        new_screen = self.up_screen(grid[4][1][1])
+        grid[1] = self.form_side(new_module, new_screen)
+
+        sorted_grid = {}
+        sorted_keys = sorted(grid)
+        for sk in sorted_keys:
+            sorted_grid[sk] = grid[sk]
+        grid = sorted_grid
+        print(f'\nGRID: ')
+        for side, info in grid.items():
+            print(side, info)
+        return grid
+
+
+    # function returns position of module in grid
+    def find_in_grid(self, module, screen):
+        for side, info in self.grid.items():
+            pair = [module, screen]
+            if pair in info:
+                return side, info.index(pair)
+
 
     # function calculates position of an object located on another module relative to current module origin
     # initial module - the module where the object is currently located
@@ -143,64 +261,119 @@ class Cube:
     # compared_module - the module which scubic coordinates system we use to recalculate coordinates (x, y)
     # returns x', y' of the compared_module coordinates system
     def recalc_pos(self, initial_module, x, y, compared_module):
-        # difference in screens between two modules(0 for neighbors)
-        # TODO !!!
-        # all below is not for 0 screens
-        # if dscreens == 3 - its on diagonal
-        # if dscreens == 2 - this never happens but should happen - fix
-        # if dscreens == 1 - this should never happen
-        dscreens = self.breadth_search(initial_module, compared_module)
-        return x, y
+        # we DONT need to move object anywhere
+        # we ONLY need the coords of origin
+        #module = self.modules[initial_module]
+        # module.move(x, y)
+        # initial_module_screen = module.get_cur_screen()
+        initial_module_side, initial_module_index = self.find_in_grid(initial_module, 0)
+        # we have to look for compared module 0 screen (it's origin)
+        compared_module_side, compared_module_index = self.find_in_grid(compared_module, 0)
+        print(f'initial module origin: side {initial_module_side} index {initial_module_index}')
+        print(f'compared module origin: side {compared_module_side} index {compared_module_index}')
+        # for (0, 120, 120, 1) should return (-120, -120)
+        # for (0, 120, 60, 2) should return (-120, -60)
+        # for (0, 360, 120, 1) should return (-360, -120)
+        # for (0, 60, 400, 5) should return (560, 60)
+        # for (0, 120, 120, 7) should return (-840, -120)
 
-    # FIXME count dscreens relative to 0 screen on first module - not 2 or 3
-    # FIXME why for 0 and 6 in says dscreens = 1??
-    # FIXME it NEVER says dscreens = 2
-    def breadth_search(self, initial_module, compared_module):
-        checked = []
-        queue = deque()
-        queue.append(initial_module)
-        parents = {}
-        # for i in range(4):
-        while queue:
-            # extracting a module from the left end of the queue
-            module = queue.popleft()
-            print(f'\n\nmodule is {module}')
-            if module not in checked:
-                # if module is the one we are looking for - finish
-                if module == compared_module:
-                    parent = parents[module]
-                    print(f'checked = {checked}')
-                    print(f'len checked = {len(checked)}')
-                    print(f'index = {checked.index(parent)}')
-                    dscreens = checked.index(parent) - 1
-                    if dscreens == -1:
-                        dscreens = 0
-                    print('FOUND!!!')
-                    print(f'difference in screens is {dscreens}')
-                    print("============")
-                    return dscreens
-                # else - add all module neighbours to the queue
+        # TODO only process 0 screens of both modules
+        # TODO that is: if we have module 0 and coords on it are 360, 120 then the object would be
+        # TODO on right side, but we have to calculate new coords relative to the initial module 0 ORIGIN!
+
+        rotate_times = abs(compared_module_index - initial_module_index)
+        # front - 0; up - 1; left - 2; right - 3; back - 4; down - 5;
+        print(f'rotate time is {rotate_times}')
+
+
+        grid_graph = {}
+        #                up, left, right, down
+        grid_graph[0] = [1, 2, 3, 5]
+        grid_graph[1] = [4, 1, 3, 0]
+        grid_graph[2] = [1, 4, 0, 5]
+        grid_graph[3] = [1, 0, 4, 5]
+        grid_graph[4] = [1, 3, 2, 5]
+        grid_graph[5] = [0, 2, 3, 4]
+
+        # changes of X and Y depending on direction
+        dx, dy = 0, 0
+
+
+        # the easiest option - if compared module and initial module are the same module
+        if compared_module == initial_module:
+            return x, y
+
+        # if compared module is located on the same side as the initial one
+        if compared_module_side == initial_module_side:
+            for i in range(rotate_times):
+                x, y = -y, x
+            return x, y
+
+        # TODO test each side if initial_index == compared_index
+
+        # TODO test this:
+        # FIXME current version only works if initial module is 0, so if the module with another number is input
+        # FIXME then we have to rotate it anticlockwise to "become" module 0
+        # FIXME then we "teleport" it to module zero of the opposite side and do the other magick stuff
+        prepare_rotate_times = initial_module_index - 0
+        for i in range(prepare_rotate_times):
+            x, y = -y, x
+        print(f"initial coords relative to module 0 of initial side are ({x},{y})")
+
+        # if compared module is located on one of four neighbour sides
+        if compared_module_side in grid_graph[initial_module_side]:
+            print('compared module`s origin is on the neighbour side')
+            direction = grid_graph[initial_module_side].index(compared_module_side)
+            print(f'direction is {direction}')
+            # up
+            if direction == 0:
+                # imagine that we moved current module to the neighbour side (up in this case)
+                # so (0, 0) becomes (1, 0)
+                dy = 480
+                dx = 0
+                for i in range(rotate_times):
+                    x, y = y, -x
+                # x is the same
+            # left
+            elif direction == 1:
+                dy = 0
+                dx = 480
+                for i in range(rotate_times):
+                    x, y = y, -x
+            # right
+            elif direction == 2:
+                dy = 0
+                dx = -480
+                for i in range(rotate_times):
+                    x, y = y, -x
+            # down
+            elif direction == 3:
+                dy = -480
+                dx = 0
+                for i in range(rotate_times):
+                    x, y = y, -x
+
+        else:
+            print("BACK")
+            # in this case compared module is on the opposite side
+            # moving to upper left module of back side
+            # in this case we have to do it here - not in the end of function
+            x = -(960 - x)
+            # we don't change y here
+
+            print(f'x and y relative to 0 module of opposite side are {x}, {y}')
+
+            for i in range(rotate_times):
+                # it's weird, but on the 0 module of the opposite side the object has coordinates that look nothing like
+                # coordinates on the other three modules of the same side
+                # so with first rotation coordinates have to be transformed like that
+                if i == 0:
+                    x, y = 960 - y, 960 + x
                 else:
-                    trbl_module = self.trbl[module]
-                    anticlockwise = trbl_module[0][0][0]
-                    clockwise = trbl_module[0][1][0]
-                    back = trbl_module[1][1][0]
-                    print(f'clockwise is {clockwise}')
-                    print(f'anticlockwise is {anticlockwise}')
-                    print(f'back is {back}')
-                    queue.append(clockwise)
-                    queue.append(anticlockwise)
-                    queue.append(back)
-                    checked.append(module)
-                    if anticlockwise not in list(parents.keys()):
-                        parents[anticlockwise] = module
-                    if clockwise not in list(parents.keys()):
-                        parents[clockwise] = module
-                    if back not in list(parents.keys()):
-                        parents[back] = module
-                    print(f'queue is {queue}')
-                    print(f'checked is {checked}')
-                    print("============")
+                    x, y = y, -x
+        x += dx
+        y += dy
+        return x, y
 
 
 
