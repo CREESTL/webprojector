@@ -320,6 +320,7 @@ class Cube:
             x, y = -y, x
         print(f"initial coords relative to module 0 of initial side are ({x},{y})")
 
+        # FIXME back side works, bit these four sides - do not
         # if compared module is located on one of four neighbour sides
         if compared_module_side in grid_graph[initial_module_side]:
             print('compared module`s origin is on the neighbour side')

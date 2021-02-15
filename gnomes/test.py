@@ -70,10 +70,11 @@ def draw_coords():
     # for (0, 60, 120, 7) should return (-840, -60)# works with x = -(960 - x),  |   if i == 0: x, y = 960 - y, 960 + x else x, y = y, -x
     # for (0, 60, 400, 5) should return (560, 60)# works with x = -(960 - x),  |   if i == 0: x, y = 960 - y, 960 + x else x, y = y, -x
     # for (0, 360, 20, 5) should return (600, 460) # works with  x = -(960 - x),  |  x, y = -x, (480 - y) AND # works with x = -(960 - x),  |   if i == 0: x, y = 960 - y, 960 + x else x, y = y, -x
-
     # for (1, 60, 120, 0) should return (-120, 60) # works
-    # 
-    new_x, new_y = cube.recalc_pos(1, 60, 120, 0)
+
+    # DO ONE ROTATION OF LOWER HLF OF THE CUBE TO THE RIGHT
+    # for (0, 60, 120, 3) should return (-540, 360) doesn't work
+    new_x, new_y = cube.recalc_pos(0, 60, 120, 3)
     print(f'new X is {new_x}, new Y is {new_y}')
 
 
