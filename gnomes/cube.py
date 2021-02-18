@@ -159,7 +159,6 @@ class Cube:
                 pass
         return side
 
-
     # function returns the screen on the right side of the current module
     # it "looks" around the right corner
     # increasing by 1 ONLY works for up right corner
@@ -192,7 +191,6 @@ class Cube:
             return 0
         elif screen == 2:
             return 1
-
 
     # front - 0; up - 1; left - 2; right - 3; back - 4; down - 5;
     def update_grid(self):
@@ -246,7 +244,6 @@ class Cube:
             print(side, info)
         return grid
 
-
     # function returns position of module in grid
     def find_in_grid(self, module, screen):
         for side, info in self.grid.items():
@@ -254,126 +251,261 @@ class Cube:
             if pair in info:
                 return side, info.index(pair)
 
+    # function calculates on which screen of the initial module the object is located
+    # further coordinates transformations are based on that screen number
+    @ staticmethod
+    def find_screen(x, y):
+        if (x <= 240) and (y <= 240):
+            return 0
+        elif (x <= 240) and (y >= 240):
+            return 1
+        elif (x > 240) and (y <= 240):
+            return 2
+        elif (x > 240) and (y > 240):
+            return 1
 
     # function calculates position of an object located on another module relative to current module origin
     # initial module - the module where the object is currently located
     # x, y - scubic coordinates of the object on the module
     # compared_module - the module which scubic coordinates system we use to recalculate coordinates (x, y)
     # returns x', y' of the compared_module coordinates system
-    def recalc_pos(self, initial_module, x, y, compared_module):
-        # we DONT need to move object anywhere
-        # we ONLY need the coords of origin
-        #module = self.modules[initial_module]
-        # module.move(x, y)
-        # initial_module_screen = module.get_cur_screen()
+    def recalc_coords(self, initial_module, x, y, compared_module):
         initial_module_side, initial_module_index = self.find_in_grid(initial_module, 0)
         # we have to look for compared module 0 screen (it's origin)
         compared_module_side, compared_module_index = self.find_in_grid(compared_module, 0)
         print(f'initial module origin: side {initial_module_side} index {initial_module_index}')
         print(f'compared module origin: side {compared_module_side} index {compared_module_index}')
-        # for (0, 120, 120, 1) should return (-120, -120)
-        # for (0, 120, 60, 2) should return (-120, -60)
-        # for (0, 360, 120, 1) should return (-360, -120)
-        # for (0, 60, 400, 5) should return (560, 60)
-        # for (0, 120, 120, 7) should return (-840, -120)
 
-        # TODO only process 0 screens of both modules
-        # TODO that is: if we have module 0 and coords on it are 360, 120 then the object would be
-        # TODO on right side, but we have to calculate new coords relative to the initial module 0 ORIGIN!
-
+        # how many times we have to rotate 0 module of compared side to reach the compared module
         rotate_times = abs(compared_module_index - initial_module_index)
         # front - 0; up - 1; left - 2; right - 3; back - 4; down - 5;
         print(f'rotate time is {rotate_times}')
-
-
-        grid_graph = {}
-        #                up, left, right, down
-        grid_graph[0] = [1, 2, 3, 5]
-        grid_graph[1] = [4, 1, 3, 0]
-        grid_graph[2] = [1, 4, 0, 5]
-        grid_graph[3] = [1, 0, 4, 5]
-        grid_graph[4] = [1, 3, 2, 5]
-        grid_graph[5] = [0, 2, 3, 4]
-
-        # changes of X and Y depending on direction
-        dx, dy = 0, 0
-
+        #            up, left, right, down
+        grid_graph = {0: [1, 2, 3, 5], 1: [4, 1, 3, 0], 2: [1, 4, 0, 5], 3: [1, 0, 4, 5], 4: [1, 3, 2, 5],
+                      5: [0, 2, 3, 4]}
 
         # the easiest option - if compared module and initial module are the same module
         if compared_module == initial_module:
             return x, y
 
+        # WORKS FULL
+        # front
         # if compared module is located on the same side as the initial one
         if compared_module_side == initial_module_side:
-            for i in range(rotate_times):
-                x, y = -y, x
-            return x, y
+            initial_screen = self.find_screen(x, y)
+            if initial_screen == 0:
+                for i in range(rotate_times):
+                    x, y = y, -x
+                return x, y
+            elif initial_screen == 1:
+                if x <= 240:
+                    for i in range(rotate_times):
+                        x, y = y, -x
+                    return x, y
+                elif x > 240:
+                    for i in range(rotate_times):
+                        if (i > 0) and (x > 0):
+                            x = -x
+                        y = abs(y) - 480 if i == 0 or i == 1 else -(abs(y) - 480)
+                    return x, y
+            elif initial_screen == 2:
+                for i in range(rotate_times):
+                    if (i > 0) and (x > 0):
+                        x = -x
+                    y = abs(y) - 480 if i == 0 or i == 1 else -(abs(y) - 480)
+                return x, y
 
-        # TODO test each side if initial_index == compared_index
+        # FIXME optimize memory!!!! it crashes
 
-        # TODO test this:
-        # FIXME current version only works if initial module is 0, so if the module with another number is input
-        # FIXME then we have to rotate it anticlockwise to "become" module 0
-        # FIXME then we "teleport" it to module zero of the opposite side and do the other magick stuff
+        # we rotate initial module counter-clockwise to "make" it module 0 of initial side
         prepare_rotate_times = initial_module_index - 0
         for i in range(prepare_rotate_times):
-            x, y = -y, x
-        print(f"initial coords relative to module 0 of initial side are ({x},{y})")
+            x, y = y, -x
 
-        # FIXME back side works, bit these four sides - do not
         # if compared module is located on one of four neighbour sides
         if compared_module_side in grid_graph[initial_module_side]:
             print('compared module`s origin is on the neighbour side')
             direction = grid_graph[initial_module_side].index(compared_module_side)
             print(f'direction is {direction}')
+            # now depending on direction where the compared module is located we make coordinates transformations
+            # I won't explain all calculations here - it's too much
+
+            # WORKS FULL
             # up
             if direction == 0:
-                # imagine that we moved current module to the neighbour side (up in this case)
-                # so (0, 0) becomes (1, 0)
-                dy = 480
-                dx = 0
-                for i in range(rotate_times):
-                    x, y = y, -x
-                # x is the same
+                initial_screen = self.find_screen(x, y)
+                print(f'initial_screen is {initial_screen}')
+                if initial_screen == 0:
+                    y -= 480
+                    for i in range(rotate_times):
+                        x, y = y, -x
+                elif initial_screen == 1:
+                    if x <= 240:
+                        y -= 480
+                        for i in range(rotate_times):
+                            x, y = y, -x
+                        return x, y
+                    else:
+                        y_copy = y
+                        y = -(480 - x)
+                        x = 480 - y_copy
+                        for i in range(rotate_times):
+                            x, y = y, -x
+                        return x, y
+                elif initial_screen == 2:
+                    y = - (480 - x)
+                    x = 480 - y
+                    for i in range(rotate_times):
+                        x = -x if x > 0 else x
+                        y = abs(y) - 480
+            # WORKS FULL
             # left
             elif direction == 1:
-                dy = 0
-                dx = 480
-                for i in range(rotate_times):
-                    x, y = y, -x
+                initial_screen = self.find_screen(x, y)
+                print(f'initial_screen is {initial_screen}')
+                if initial_screen == 0:
+                    x -= 480
+                    for i in range(rotate_times):
+                        x = -x if i == 0 or i == 2 else x
+                        y = 480 - abs(y) if i < 1 else abs(y) - 480
+                elif initial_screen == 1:
+                    if (x <= 240) and (y >= 240):
+                        x_copy = x
+                        x = - (480 - y)
+                        y = (480 - x_copy)
+                        for i in range(rotate_times):
+                            x, y = y, -x
+                        return x, y
+                    elif (x > 240) and (y > 240):
+                        x = - (480 - x)
+                        for i in range(rotate_times):
+                            x, y = y, -x
+                        return x, y
+                elif initial_screen == 2:
+                    x = - (480 - x)
+                    for i in range(rotate_times):
+                        x, y = y, -x
+                    return x, y
+
+            # WORKS FULL
             # right
             elif direction == 2:
-                dy = 0
-                dx = -480
-                for i in range(rotate_times):
-                    x, y = y, -x
+                initial_screen = self.find_screen(x, y)
+                print(f'initial_screen is {initial_screen}')
+                if initial_screen == 0:
+                    x += 480
+                    for i in range(rotate_times):
+                        if (i > 0) and (x > 0):
+                            x = -x
+                        y = abs(y) - 480 if i == 0 or i == 1 else -(abs(y) - 480)
+                    return x, y
+                elif initial_screen == 1:
+                    if x <= 240:
+                        x += 480
+                        for i in range(rotate_times):
+                            if (i > 0) and (x > 0):
+                                x = -x
+                            y = abs(y) - 480 if i ==0 or i == 1 else -(abs(y) - 480)
+                        return x, y
+                    elif x > 240:
+                        x_copy = x
+                        x = 480 + (480 - y)
+                        y = x_copy
+                        for i in range(rotate_times):
+                            if (i > 0) and (x > 0):
+                                x = -x
+                            y = abs(y) - 480 if i ==0 or i == 1 else -(abs(y) - 480)
+                        return x, y
+                elif initial_screen == 2:
+                    x_copy = x
+                    y_copy = y
+                    x += 480
+                    for i in range(rotate_times):
+                        if i == 0:
+                            x = 720 + (240 - y_copy)
+                            y = -(480 - x_copy)
+                            return x, y
+                        elif i == 2:
+                            x = -(720 + (240 - y_copy))
+                            y = 480 - x_copy
+                            return x, y
+                        else:
+                            x = -(480 + x_copy)
+                            y = -y_copy
+                            return x, y
+            # WORKS FULL
             # down
             elif direction == 3:
-                dy = -480
-                dx = 0
-                for i in range(rotate_times):
-                    x, y = y, -x
-
+                initial_screen = self.find_screen(x, y)
+                print(f'initial_screen is {initial_screen}')
+                if initial_screen == 0:
+                    y += 480
+                    for i in range(rotate_times):
+                        x, y = y, -x
+                    return x, y
+                elif initial_screen == 1:
+                    if x <= 240:
+                        x = 720 + (240 - x)
+                        y = 480 - y
+                        for i in range(rotate_times):
+                            x, y = y, -x
+                        return x, y
+                    if x > 240:
+                        x_copy = x
+                        x = 720 + (y - 240)
+                        y = 480 - x_copy
+                        for i in range(rotate_times):
+                            x, y = y, -x
+                        return x, y
+                elif initial_screen == 2:
+                    x_copy = x
+                    x = 480 + y
+                    y = 480 - x_copy
+                    for i in range(rotate_times):
+                        if (i > 0) and (x > 0):
+                            x = -x
+                        y = abs(y) - 480 if i == 0 or i == 1 else -(abs(y) - 480)
+                    return x, y
+        # back
         else:
-            print("BACK")
-            # in this case compared module is on the opposite side
-            # moving to upper left module of back side
-            # in this case we have to do it here - not in the end of function
-            x = -(960 - x)
-            # we don't change y here
-
-            print(f'x and y relative to 0 module of opposite side are {x}, {y}')
-
-            for i in range(rotate_times):
-                # it's weird, but on the 0 module of the opposite side the object has coordinates that look nothing like
-                # coordinates on the other three modules of the same side
-                # so with first rotation coordinates have to be transformed like that
-                if i == 0:
-                    x, y = 960 - y, 960 + x
-                else:
-                    x, y = y, -x
-        x += dx
-        y += dy
+            initial_screen = self.find_screen(x, y)
+            print(f'initial_screen is {initial_screen}')
+            if initial_screen == 0:
+                x_copy = x
+                y_copy = y
+                x = -(960 - x)
+                for i in range(rotate_times):
+                    if i == 0:
+                        x = 960 - y_copy
+                        y = x_copy
+                    if i == 1:
+                        x = 960 - x_copy
+                        y = -y_copy
+                    if i == 2:
+                        x = -(960 - y_copy)
+                        y = -x_copy
+                return x, y
+            elif initial_screen == 1:
+                if x <= 240:
+                    x_copy = x
+                    x = -(960 - y)
+                    y = 480 - x_copy
+                    for i in range(rotate_times):
+                        x = -x if i == 0 or i == 2 else x
+                        y = 480 - abs(y) if i < 1 else abs(y) - 480
+                    return x, y
+                if x > 240:
+                    x = -(960 - x)
+                    for i in range(rotate_times):
+                        x = -x if i == 0 or i == 2 else x
+                        y = 480 - abs(y) if i < 1 else abs(y) - 480
+                    return x, y
+            elif initial_screen == 2:
+                x = -(960 - x)
+                for i in range(rotate_times):
+                    x = -x if i == 0 or i == 2 else x
+                    y = 480 - abs(y) if i < 1 else abs(y) - 480
+                return x, y
         return x, y
 
 

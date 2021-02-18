@@ -62,19 +62,76 @@ def draw_coords():
     memory_file = io.BytesIO()
     img_num = 0
 
-    # FIXME test this on different cases
     # DEFAULT POSITIONS OF MODULES
-    # for (0, 60, 120, 4) should return (-900, 120)# works with  x = -(960 - x),  |  x, y = -x, (480 - y)  AND # works with x = -(960 - x),  |   if i == 0: x, y = 960 - y, 960 + x else x, y = y, -x
-    # for (0, 60, 120, 5) should return (840, 60)# works with x = -(960 - x),  |   if i == 0: x, y = 960 - y, 960 + x else x, y = y, -x
-    # for (0, 60, 120, 6) should return (60, -840)# works with x = -(960 - x),  |   if i == 0: x, y = 960 - y, 960 + x else x, y = y, -x
-    # for (0, 60, 120, 7) should return (-840, -60)# works with x = -(960 - x),  |   if i == 0: x, y = 960 - y, 960 + x else x, y = y, -x
-    # for (0, 60, 400, 5) should return (560, 60)# works with x = -(960 - x),  |   if i == 0: x, y = 960 - y, 960 + x else x, y = y, -x
-    # for (0, 360, 20, 5) should return (600, 460) # works with  x = -(960 - x),  |  x, y = -x, (480 - y) AND # works with x = -(960 - x),  |   if i == 0: x, y = 960 - y, 960 + x else x, y = y, -x
-    # for (1, 60, 120, 0) should return (-120, 60) # works
+    # front side FULLY CHECKED
+    # for (0, 400, 60, 0) should return (400, 60) works
+    # for (0, 400, 60, 1) should return (400, -420) works
+    # for (0, 400, 60, 2) should return (-400, -60) works
+    # for (0, 400, 60, 3) should return (-400, 420) works
+    # for (0, 60, 400, 0) should return (60, 400) works
+    # for (0, 60, 400, 1) should return (400, -60) works
+    # for (0, 60, 400, 2) should return (-60, -400) works
+    # for (0, 60, 400, 3) should return (-400, 60) works
+    # for (0, 60, 120, 0) should return (60, 120) works
+    # for (0, 60, 120, 1) should return (120, -60) works
+    # for (0, 60, 120, 2) should return (-60, -120) works
+    # for (0, 60, 120, 3) should return (-120, 60) works
+    # for (0, 400, 420, 0) should return (400, 420) works
+    # for (0, 400, 420, 1) should return (400, -60) works
+    # for (0, 400, 420, 2) should return (-400, -420) works
+    # for (0, 400, 420, 3) should return (-400, 60) works
 
-    # DO ONE ROTATION OF LOWER HLF OF THE CUBE TO THE RIGHT
-    # for (0, 60, 120, 3) should return (-540, 360) doesn't work
-    new_x, new_y = cube.recalc_pos(0, 60, 120, 3)
+    # back side FULLY CHECKED
+    # for (0, 400, 60, 4) should return (-560, 60) works
+    # for (0, 400, 60, 5) should return (560, 420) works
+    # for (0, 400, 60, 6) should return (560, -60) works
+    # for (0, 400, 60, 7) should return (-560, -420) works
+    # for (0, 60, 400, 4) should return (-560, 420) works
+    # for (0, 60, 400, 5) should return (560, 60) works
+    # for (0, 60, 400, 6) should return (560, -420) works
+    # for (0, 60, 400, 7) should return (-560, -60) works
+    # for (0, 60, 120, 4) should return (-900, 120) works
+    # for (0, 60, 120, 5) should return (840, 60) works
+    # for (0, 60, 120, 6) should return (900, -120) works
+    # for (0, 60, 120, 7) should return (-840, -60) works
+    # for (0, 400, 420, 4) should return (-560, 420) works
+    # for (0, 400, 420, 5) should return (560, 60) works
+    # for (0, 400, 420, 6) should return (560, -420) works
+    # for (0, 400, 420, 7) should return (-560, -60) works
+
+
+    # DO ONE ROTATION OF LOWER HALF OF THE CUBE CLOCKWISE
+    # right side FULLY CHECKED
+    # for (0, 400, 60, 6) should return (-880, -60) works
+    # for (0, 400, 60, 7) should return (-900, 80) works
+    # for (0, 60, 400, 6) should return (-540, -400) works
+    # for (0, 60, 400, 7) should return (-540, 80) works
+    # for (0, 60, 120, 6) should return (-540, -120) works
+    # for (0, 60, 400, 7) should return (-540, 360) works
+    # for (0, 400, 420, 6) should return (-540, -400) works
+    # left side FULLY CHECKED
+    # for (0, 400, 60, 2) should return (80, -60) works
+    # for (0, 400, 60, 3) should return (-60, -80) works
+    # for (0, 60, 400, 2) should return (80, -420) works
+    # for (0, 60, 400, 4) should return (-420, -80) works
+    # for (0, 60, 120, 2) should return (420, -120) works
+    # for (0, 60, 120, 3) should return (-420, -360) works
+    # for (0, 400, 420, 2) should return (80, -420) works
+    # for (0, 400, 420, 3) should return (-420, -80) works
+
+    # DO ONE ROTATION OF THE LOWER HALF CLOCKWISE AND ONE ROTATION OF BACK HALF ANTICLOCKLWISE
+    # up side FULLY CHECKED
+    # for (0, 400, 60, 6) should return (-420, -400) works
+    # for (0, 60, 400, 6) should return (-80, -60) works
+    # for (0, 60, 120, 6) should return (-360, -60) works
+    # for (0, 400, 420, 6) should return (-80, -60) works
+    # down side FULLY CHECKED
+    # for (0, 400, 60, 3) should return (-540, -80) works
+    # for (0, 60, 400, 3) should return (-900, -80) works
+    # for (0, 60, 120, 3) should return (-60, -600) works
+    # for (0, 400, 420, 3) should return (-900, -80) works
+
+    new_x, new_y = cube.recalc_coords(0, 400, 420, 3)
     print(f'new X is {new_x}, new Y is {new_y}')
 
 
@@ -96,6 +153,10 @@ def draw_coords():
     memory_file.seek(0)
     response = make_response(memory_file.read())
     response.headers['Content-Type'] = 'application/zip'
+
+    # deleting cube object
+    del cube
+
     return response
 
 
