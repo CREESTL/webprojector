@@ -1,7 +1,5 @@
 import numpy as np
 import cv2
-from collections import deque
-
 '''
 
 Main file with all functions of the cube
@@ -112,17 +110,16 @@ class Module:
 
 # class represents the whole cube of 8 modules and 24 screens
 class Cube:
-    def __init__(self, request):
+    def __init__(self):
         self.num_screens = 24
         self.num_modules = 8
         self.num_sides = 6
-        self.trbl = self.update_trbl(request)
-        self.grid = self.update_grid()
+        self.trbl = None
+        self.grid = None
         self.modules = [Module(i) for i in range(self.num_modules)]
 
     # function forms a table of relative positions of module
-    @staticmethod
-    def update_trbl(request):
+    def update_trbl(self,request):
         # first of all, all information from request we put into list of json strings
         json = []
         for i in range(8):
@@ -137,7 +134,7 @@ class Cube:
             trbl[i] = {}
             for j, screen in enumerate(module['screens']):
                 trbl[i][j] = [[screen["top"][0], screen["top"][1]], [screen["left"][0], screen["left"][1]]]
-        return trbl
+        self.trbl = trbl
 
     # function gets the number of start module and start screen and forms a list of 4 modules and their screens
     # located on the same side of the cube
@@ -193,7 +190,11 @@ class Cube:
             return 1
 
     # front - 0; up - 1; left - 2; right - 3; back - 4; down - 5;
-    def update_grid(self):
+    def update_grid(self, request):
+
+        # before updating the grid we have to update the trbl
+        self.update_trbl(request)
+
         grid = {}
 
         # FRONT SIDE
@@ -239,10 +240,8 @@ class Cube:
         for sk in sorted_keys:
             sorted_grid[sk] = grid[sk]
         grid = sorted_grid
-        print(f'\nGRID: ')
-        for side, info in grid.items():
-            print(side, info)
-        return grid
+
+        self.grid = grid
 
     # function returns position of module in grid
     def find_in_grid(self, module, screen):
@@ -273,7 +272,7 @@ class Cube:
         initial_module_side, initial_module_index = self.find_in_grid(initial_module, 0)
         # we have to look for compared module 0 screen (it's origin)
         compared_module_side, compared_module_index = self.find_in_grid(compared_module, 0)
-        print(f'initial module origin: side {initial_module_side} index {initial_module_index}')
+        print(f'\ninitial module origin: side {initial_module_side} index {initial_module_index}')
         print(f'compared module origin: side {compared_module_side} index {compared_module_index}')
 
         # how many times we have to rotate 0 module of compared side to reach the compared module
@@ -315,7 +314,6 @@ class Cube:
                     y = abs(y) - 480 if i == 0 or i == 1 else -(abs(y) - 480)
                 return x, y
 
-        # FIXME optimize memory!!!! it crashes
 
         # we rotate initial module counter-clockwise to "make" it module 0 of initial side
         prepare_rotate_times = initial_module_index - 0
