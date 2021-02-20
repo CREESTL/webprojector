@@ -69,7 +69,8 @@ def draw():
     # images to be put it zip archive
     images = []
     # creating a cube to work with
-    cube = Cube(request)
+    cube = Cube()
+    cube.update_grid(request)
     # all modules of the cube
     modules = cube.modules
     for module in modules:

@@ -7,27 +7,130 @@ from zipfile import ZipFile, ZipInfo
 import zipfile
 from gnomes.cube import Cube
 import tracemalloc
+import time
+import redis
+from gnomes.flask_celery import make_celery
+from celery import Celery
+'''
+
+File used for testing and debug of cube.recalc_coords()
 
 '''
 
-Just a circle moving through all 3 screens of a module in a circular path
 
-'''
+
+# Start Redis server with
+# 1) cd redis
+# 2) redis-server redis.windows.conf
+
+# Start Celery with
+# 1) cd webprojector
+# 2) celery -A gnomes.test.celery worker
 
 # basic Flask settings
 app = Flask(__name__)
 app.secret_key = "cube"
 app.config.update(
-    FAKE_LATENCY_BEFORE=1,
+    TESTING=True,
+    SECRET_KEY=b'_5#y2L"F4Q8z\n\xec]/',
+    CELERY_BROKER_URL='redis://localhost:6379',
+    CELERY_BACKEND='redis://localhost:6379'
 )
-app.debug = True
+r = redis.Redis(host='localhost', port=6379)
+celery = make_celery(app)
+
 log = logging.getLogger('werkzeug')
 log.disabled = True
 
 
-# function is used for debug
-# in draws all axes, number of module and number of screen of the module
-@app.route('/test', methods=['GET', 'POST'])
+#=======================================================================================================================
+
+
+# start position for a circle
+x = 240
+y = 120
+direction = 1
+cube = Cube()
+
+# function changes circle's coordinates
+def move_circle():
+    global x, y, direction
+    if direction == 1:
+        x -= 10
+        if x <= -240:
+            direction = 0
+    elif direction == 0:
+        x += 10
+        if x >= 240:
+            direction = 1
+    return x, y
+
+
+# TODO Do I need Celery? It doesn't seem to help prevent freezes
+
+# function is used to test recalculation of object coords
+@app.route('/coords', methods=['GET', 'POST'])
+@celery.task(name='test.module_to_module')
+def module_to_module():
+    start_time = time.time()
+    # tracing the amount of used memory
+    tracemalloc.start()
+    global cube
+    # images to be put it zip archive
+    images = []
+    # with each request we MUST update positions of modules of the cube
+    cube.update_grid(request)
+    x, y = move_circle()
+    for img in cube.modules[0].update_screens(x, y):
+        images.append(img)
+    new_x, new_y = cube.recalc_coords(0, x, y, 1)
+    #print(f'new_x is {new_x}, new_y is {new_y}')
+    for img in cube.modules[1].update_screens(new_x, new_y):
+        images.append(img)
+    while len(images) != 24:
+        images.append(np.zeros((240, 240, 3), np.uint8))
+
+    # FIXME optimize memory!!!! When circle suddenly stops moving - RAM rising 100mb each second
+    # FIXME if I start rotating the half of cube many times - circle stops maybe because module_to_module() has not
+    # FIXME enough time to process what's happening
+
+
+    # put the images into the response archive
+    memory_file = io.BytesIO()
+    img_num = 0
+    with ZipFile(memory_file, "w") as zip_file:
+        for module in range(cube.num_modules):
+            for screen in range(cube.num_screens // cube.num_modules):
+                output_img = images[img_num]
+                encode_param = []
+                # encode each of 24 images
+                _, buffer = cv2.imencode('.bmp', output_img, encode_param)
+                # add a specific info about the module this image belongs to
+                # so first 3 images go to the first module, images 4, 5, 6 - to the second etc.
+                zip_info = ZipInfo("modules/" + str(module) + "/screens/" + str(screen) + ".bmp")
+                zip_info.compress_type = zipfile.ZIP_DEFLATED
+                zip_info.compress_size = 1
+                # insert the image into the archive
+                zip_file.writestr(zip_info, buffer)
+                img_num += 1
+    memory_file.seek(0)
+    response = make_response(memory_file.read())
+    response.headers['Content-Type'] = 'application/zip'
+
+    # deleting cube object to free memory
+    #del cube
+    cube.clear_screens()
+
+    # showing used memory
+    current, peak = tracemalloc.get_traced_memory()
+    print(f"Current memory usage is {current / 10 ** 6}MB; Peak was {peak / 10 ** 6}MB")
+    tracemalloc.stop()
+    print(f'time of handling request: {time.time() - start_time}')
+    return response
+
+
+# function draws all axes, number of module and number of screen of the module
+@app.route('/axes', methods=['GET', 'POST'])
 def draw_coords():
 
     # tracing the amount of used memory
@@ -163,4 +266,5 @@ if __name__ == "__main__":
     port = 2399
     threaded = True
     # starting the Flask app itself
-    app.run(host=host, port=port, threaded=threaded)
+    #app.run(host=host, port=port, threaded=threaded, debug=True)
+    app.run(debug=True, port=port)

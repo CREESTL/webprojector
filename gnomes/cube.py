@@ -272,13 +272,13 @@ class Cube:
         initial_module_side, initial_module_index = self.find_in_grid(initial_module, 0)
         # we have to look for compared module 0 screen (it's origin)
         compared_module_side, compared_module_index = self.find_in_grid(compared_module, 0)
-        print(f'\ninitial module origin: side {initial_module_side} index {initial_module_index}')
-        print(f'compared module origin: side {compared_module_side} index {compared_module_index}')
+        # print(f'\ninitial module origin: side {initial_module_side} index {initial_module_index}')
+        # print(f'compared module origin: side {compared_module_side} index {compared_module_index}')
 
         # how many times we have to rotate 0 module of compared side to reach the compared module
         rotate_times = abs(compared_module_index - initial_module_index)
         # front - 0; up - 1; left - 2; right - 3; back - 4; down - 5;
-        print(f'rotate time is {rotate_times}')
+        #print(f'rotate time is {rotate_times}')
         #            up, left, right, down
         grid_graph = {0: [1, 2, 3, 5], 1: [4, 1, 3, 0], 2: [1, 4, 0, 5], 3: [1, 0, 4, 5], 4: [1, 3, 2, 5],
                       5: [0, 2, 3, 4]}
@@ -505,6 +505,11 @@ class Cube:
                     y = 480 - abs(y) if i < 1 else abs(y) - 480
                 return x, y
         return x, y
+
+    # function clears all screens of the cube
+    def clear_screens(self):
+        for module in self.modules:
+            module.clear_screens()
 
 
 
