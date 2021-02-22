@@ -48,6 +48,7 @@ class Module:
     def step(self, coord, coord_num):
         # function calculates screen number using ONE coordinate, so for both X and Y screen number must be 0
         self.cur_screen = 0
+        print(f'in step() cur_screen is {self.cur_screen}')
         # moving outside the screen
         if coord > 240:
             # making X of new screen equal to Y of previous screen
@@ -142,9 +143,13 @@ class Cube:
         i = 0
         side = []
         while i < 4:
-            # adding current module to list
-            side.append([module_num, screen_num])
-            try:
+            # this can happen when trbl.update was called when the cube was still in rotation
+            if (module_num == -1) or (screen_num == -1):
+                # return no side
+                return None
+            else:
+                # adding current module to list
+                side.append([module_num, screen_num])
                 # extracting module and it's screen clockwise to current module
                 module_clockwise = self.trbl[module_num][screen_num][1][0]
                 screen_clockwise = self.trbl[module_num][screen_num][1][1]
@@ -152,8 +157,6 @@ class Cube:
                 module_num = module_clockwise
                 screen_num = screen_clockwise
                 i += 1
-            except KeyError:
-                pass
         return side
 
     # function returns the screen on the right side of the current module
@@ -189,6 +192,8 @@ class Cube:
         elif screen == 2:
             return 1
 
+    # it has such format:
+    # {side_num: [[first_module_num, it's screen_num], [second_module_num, it's screen_num], [third_module_num, it's screen_num].....}
     # front - 0; up - 1; left - 2; right - 3; back - 4; down - 5;
     def update_grid(self, request):
 
@@ -199,6 +204,9 @@ class Cube:
 
         # FRONT SIDE
         grid[0] = self.form_side(0, 0)
+        # it can happen if the cube is still in rotation and we cannot form the side
+        if grid[0] is None:
+            return
 
         # DOWN SIDE
         # take the lower left module of the front side and process it
@@ -206,6 +214,8 @@ class Cube:
         new_module = grid[0][3][0]
         new_screen = self.down_screen(grid[0][3][1])
         grid[5] = self.form_side(new_module, new_screen)
+        if grid[5] is None:
+            return
 
         # RIGHT SIDE
         # take the upper right module of front side and process it
@@ -213,6 +223,8 @@ class Cube:
         new_module = grid[0][1][0]
         new_screen = self.right_screen(grid[0][1][1])
         grid[3] = self.form_side(new_module, new_screen)
+        if grid[3] is None:
+            return
 
         # BACK SIDE
         # take the upper right module of the right side and process it
@@ -220,6 +232,8 @@ class Cube:
         new_module = grid[3][1][0]
         new_screen = self.right_screen(grid[3][1][1])
         grid[4] = self.form_side(new_module, new_screen)
+        if grid[3] is None:
+            return
 
         # LEFT SIDE
         # take the upper right module of the back side and process it
@@ -227,6 +241,8 @@ class Cube:
         new_module = grid[4][1][0]
         new_screen = self.right_screen(grid[4][1][1])
         grid[2] = self.form_side(new_module, new_screen)
+        if grid[2] is None:
+            return
 
         # UP SIDE
         # take the upper right module of the back side and process it
@@ -234,6 +250,8 @@ class Cube:
         new_module = grid[4][1][0]
         new_screen = self.up_screen(grid[4][1][1])
         grid[1] = self.form_side(new_module, new_screen)
+        if grid[1] is None:
+            return
 
         sorted_grid = {}
         sorted_keys = sorted(grid)
@@ -263,12 +281,16 @@ class Cube:
         elif (x > 240) and (y > 240):
             return 1
 
+
     # function calculates position of an object located on another module relative to current module origin
     # initial module - the module where the object is currently located
     # x, y - scubic coordinates of the object on the module
     # compared_module - the module which scubic coordinates system we use to recalculate coordinates (x, y)
     # returns x', y' of the compared_module coordinates system
     def recalc_coords(self, initial_module, x, y, compared_module):
+        # if the grid failed to update for some reason then we indicate that new coords were not calculated
+        if self.grid is None:
+            return None, None
         initial_module_side, initial_module_index = self.find_in_grid(initial_module, 0)
         # we have to look for compared module 0 screen (it's origin)
         compared_module_side, compared_module_index = self.find_in_grid(compared_module, 0)
@@ -278,7 +300,6 @@ class Cube:
         # how many times we have to rotate 0 module of compared side to reach the compared module
         rotate_times = abs(compared_module_index - initial_module_index)
         # front - 0; up - 1; left - 2; right - 3; back - 4; down - 5;
-        #print(f'rotate time is {rotate_times}')
         #            up, left, right, down
         grid_graph = {0: [1, 2, 3, 5], 1: [4, 1, 3, 0], 2: [1, 4, 0, 5], 3: [1, 0, 4, 5], 4: [1, 3, 2, 5],
                       5: [0, 2, 3, 4]}

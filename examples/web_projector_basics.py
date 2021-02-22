@@ -126,9 +126,11 @@ def basics_jpg():
 @app.route('/basics/zip', methods=['GET', 'POST'])
 def basics_zip():
     if request.method == 'POST':
-        wowcube = WOWCube.from_json(request.data)
+        pass
+        #wowcube = WOWCube.from_json(request.data)
     else:
-        wowcube = WOWCube.DEFAULT
+        pass
+        #wowcube = WOWCube.DEFAULT
 
     stream = io.BytesIO()
     with ZipFile(stream, "w") as zip_file:

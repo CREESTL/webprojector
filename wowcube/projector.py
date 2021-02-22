@@ -122,7 +122,7 @@ class WOWCube(Module):
     def json_hook(self, data_part):
         # data parts form a TREE not a LIST
         # loading one of screens
-        # TODO: does it male sense to load Screens and Module if we can just load the whole Cube via last "else" statement???
+        # TODO: does it make sense to load Screens and Module if we can just load the whole Cube via last "else" statement???
         if 'top' in data_part:
             data_part['top'] = Screen(data_part)
             return data_part
