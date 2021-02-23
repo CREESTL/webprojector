@@ -42,11 +42,11 @@ cube = Cube()
 def move_circle():
     global x, y, direction
     if direction == 1:
-        x -= 50
+        x -= 25
         if x <= -240:
             direction = 0
     elif direction == 0:
-        x += 50
+        x += 25
         if x >= 240:
             direction = 1
     return x, y
@@ -69,36 +69,39 @@ def module_to_module():
         # FIXME doesn't work right
         # FIXME it draws object on module 1 screen 1 after turning right half of the cube clockwise
         # FIXME maybe it's because of the order of appending images
+        # FIXME we have to append screen 1 of module 2 BEFORE screen 0 to keep circle moving horizontally
+        # FIXME how to understand which order is correct for each module???
 
-        initial_module = cube.grid[0][0][0]
-        compared_module = cube.grid[0][1][0]
+        initial_module = cube.modules[cube.grid[0][0][0]]
+        compared_module = cube.modules[cube.grid[0][1][0]]
 
-        for img in cube.modules[initial_module].update_screens(x, y):
-            images.append(img)
+        for screen in initial_module.update_screens(x, y):
+            # screen order MUST be 0, 1, 2
+            images.append(screen.surface)
+
         # recalculate coordinates for the other module - to the right from zero module
-        new_x, new_y = cube.recalc_coords(0, x, y, compared_module)
+        new_x, new_y = cube.recalc_coords(initial_module.num, x, y, compared_module.num)
         print(f'new_x is {new_x}, new_y is {new_y}')
         # only if new coordinates were successfully calculated - we draw the object
         if (new_x is not None) and (new_y is not None):
-            for img in cube.modules[compared_module].update_screens(new_x, new_y):
-                images.append(img)
+            for screen in compared_module.update_screens(new_x, new_y):
+                images.append(screen.surface)
     # fill up the rest of images
     while len(images) != 24:
         images.append(np.zeros((240, 240, 3), np.uint8))
-
     # put the images into the response archive
     memory_file = io.BytesIO()
     img_num = 0
     with ZipFile(memory_file, "w") as zip_file:
-        for module in range(cube.num_modules):
-            for screen in range(cube.num_screens // cube.num_modules):
-                output_img = images[img_num]
+        for module in cube.modules:
+            for screen in module.screens:
+                output_img = screen.surface
                 encode_param = []
                 # encode each of 24 images
                 _, buffer = cv2.imencode('.bmp', output_img, encode_param)
                 # add a specific info about the module this image belongs to
                 # so first 3 images go to the first module, images 4, 5, 6 - to the second etc.
-                zip_info = ZipInfo("modules/" + str(module) + "/screens/" + str(screen) + ".bmp")
+                zip_info = ZipInfo("modules/" + str(module.num) + "/screens/" + str(screen.num) + ".bmp")
                 zip_info.compress_type = zipfile.ZIP_DEFLATED
                 zip_info.compress_size = 1
                 # insert the image into the archive
@@ -211,15 +214,15 @@ def draw_coords():
     print(f'new X is {new_x}, new Y is {new_y}')
 
     with ZipFile(memory_file, "w") as zip_file:
-        for module in range(cube.num_modules):
-            for screen in range(cube.num_screens // cube.num_modules):
-                output_img = images[img_num]
+        for module in cube.modules:
+            for screen in module.screens:
+                output_img = screen.surface
                 encode_param = []
                 # encode each of 24 images
                 _, buffer = cv2.imencode('.bmp', output_img, encode_param)
                 # add a specific info about the module this image belongs to
                 # so first 3 images go to the first module, images 4, 5, 6 - to the second etc.
-                zip_info = ZipInfo("modules/" + str(module) + "/screens/" + str(screen) + ".bmp")
+                zip_info = ZipInfo("modules/" + str(module.num) + "/screens/" + str(screen.num) + ".bmp")
                 zip_info.compress_type = zipfile.ZIP_DEFLATED
                 zip_info.compress_size = 1
                 # insert the image into the archive

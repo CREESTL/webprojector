@@ -15,14 +15,13 @@ class Screen:
         # the number of a screen on the module
         self.num = num
 
-
 # class represents a single module
 class Module:
     def __init__(self, num):
         # a number of module (max 8)
         self.num = num
         # three screens of a module
-        self.screens = [Screen(i).surface for i in range(3)]
+        self.screens = [Screen(i) for i in range(3)]
         # number of current screen
         self.cur_screen = 0
         # list of two coordinates: x and y
@@ -40,7 +39,7 @@ class Module:
     # function clears all screens
     def clear_screens(self):
         del self.screens
-        self.screens = [Screen(i).surface for i in range(3)]
+        self.screens = [Screen(i) for i in range(3)]
 
     # function moves the object using ONE coordinate
     # coord - module of coordinate we move to
@@ -48,7 +47,6 @@ class Module:
     def step(self, coord, coord_num):
         # function calculates screen number using ONE coordinate, so for both X and Y screen number must be 0
         self.cur_screen = 0
-        print(f'in step() cur_screen is {self.cur_screen}')
         # moving outside the screen
         if coord > 240:
             # making X of new screen equal to Y of previous screen
@@ -103,7 +101,7 @@ class Module:
         screen_number, x, y = self.get_attributes()
         if screen_number is not None:
             screen = self.screens[screen_number]
-            cv2.circle(screen, (int(x), int(y)), r, color, thickness)
+            cv2.circle(screen.surface, (int(x), int(y)), r, color, thickness)
             return self.screens
         else:
             return []
