@@ -5,7 +5,7 @@ import io
 import logging.handlers
 from zipfile import ZipFile, ZipInfo
 import zipfile
-from gnomes.cube import Cube
+from cube import Cube
 import tracemalloc
 import time
 
@@ -36,7 +36,6 @@ log.disabled = True
 x = 240
 y = 120
 direction = 1
-cube = Cube()
 
 # function changes circle's coordinates
 def move_circle():
@@ -55,7 +54,6 @@ def move_circle():
 @app.route('/coords', methods=['GET', 'POST'])
 # function is used to test recalculation of object coords
 def module_to_module():
-    #global cube
     cube = Cube()
     # images to be put it zip archive
     images = []
@@ -65,12 +63,6 @@ def module_to_module():
     if cube.grid is not None:
         print(f'\ncube.grid[0][0][0] is {cube.grid[0][0][0]} \ncube.grid[0][1][0] is {cube.grid[0][1][0]}')
         # draw an object on the zero module
-
-        # FIXME doesn't work right
-        # FIXME it draws object on module 1 screen 1 after turning right half of the cube clockwise
-        # FIXME maybe it's because of the order of appending images
-        # FIXME we have to append screen 1 of module 2 BEFORE screen 0 to keep circle moving horizontally
-        # FIXME how to understand which order is correct for each module???
 
         initial_module = cube.modules[cube.grid[0][0][0]]
         compared_module = cube.modules[cube.grid[0][1][0]]

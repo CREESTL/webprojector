@@ -118,22 +118,23 @@ class Cube:
         self.modules = [Module(i) for i in range(self.num_modules)]
 
     # function forms a table of relative positions of module
-    def update_trbl(self,request):
+    def update_trbl(self, request):
         # first of all, all information from request we put into list of json strings
         json = []
-        for i in range(8):
-            json.append(request.json['modules'][i])
-        # this is a table of relative screens positions
-        # it has such format:
-        # {num_module: {num_screen: [[module_counter-clockwise, screen_counter-clockwise], [module_clockwise, screen_clockwise]]...}
-        # so it basically shows which screen of which module is located clockwise and counter-clockwise relative to the given screen of the given module
-        trbl = {}
-        # information about relative position of screens and modules from json into dictionary
-        for i, module in enumerate(json):
-            trbl[i] = {}
-            for j, screen in enumerate(module['screens']):
-                trbl[i][j] = [[screen["top"][0], screen["top"][1]], [screen["left"][0], screen["left"][1]]]
-        self.trbl = trbl
+        if request.json['modules']:
+            for i in range(8):
+                json.append(request.json['modules'][i])
+            # this is a table of relative screens positions
+            # it has such format:
+            # {num_module: {num_screen: [[module_counter-clockwise, screen_counter-clockwise], [module_clockwise, screen_clockwise]]...}
+            # so it basically shows which screen of which module is located clockwise and counter-clockwise relative to the given screen of the given module
+            trbl = {}
+            # information about relative position of screens and modules from json into dictionary
+            for i, module in enumerate(json):
+                trbl[i] = {}
+                for j, screen in enumerate(module['screens']):
+                    trbl[i][j] = [[screen["top"][0], screen["top"][1]], [screen["left"][0], screen["left"][1]]]
+            self.trbl = trbl
 
     # function gets the number of start module and start screen and forms a list of 4 modules and their screens
     # located on the same side of the cube
@@ -195,6 +196,7 @@ class Cube:
     # front - 0; up - 1; left - 2; right - 3; back - 4; down - 5;
     def update_grid(self, request):
 
+        print(f'request in update_grid is {request.json}')
         # before updating the grid we have to update the trbl
         self.update_trbl(request)
 
