@@ -6,9 +6,7 @@ import logging.handlers
 from zipfile import ZipFile, ZipInfo
 import zipfile
 from cube import Cube
-import tracemalloc
-import time
-
+import random
 
 '''
 
@@ -31,56 +29,121 @@ log.disabled = True
 
 #=======================================================================================================================
 
+# here will be stored coordinates of all objects (circles)
+objects_coords = {0: [120, 120]}
+# initial module and side for objects to appear
+initial_side_num = 0
+initial_module_num = 0
+# previous module where the circle has been
+prev_side_num = None
+prev_module_num = None
 
-# start position for a circle
-x = 240
-y = 120
-direction = 1
+# TODO create a function that checks all directions: right, left, up, down
+# TODO seems like right works correctly, but up and down...not sure
 
-# function changes circle's coordinates
-def move_circle():
-    global x, y, direction
-    if direction == 1:
-        x -= 25
-        if x <= -240:
-            direction = 0
-    elif direction == 0:
-        x += 25
-        if x >= 240:
-            direction = 1
-    return x, y
+# up works wrong when moving from module 0 to module 5
+# right works good only for module 0 and module 1
+# left works totally wrong even for the same module (0)
+# down works good only for module 0 and first screen of module 3
+def move_circle(dir):
+    global objects_coords
+    delta = 25
+    for obj_num, coords in objects_coords.items():
+        x, y = coords[0], coords[1]
+        if dir == 'right':
+            x -= delta
+            objects_coords[obj_num] = [x, y]
+        elif dir == 'left':
+            x += delta
+            objects_coords[obj_num] = [x, y]
+        elif dir == 'up':
+            y += delta
+            objects_coords[obj_num] = [x, y]
+        elif dir == 'down':
+            y -= delta
+            objects_coords[obj_num] = [x, y]
+
+# function randomly moves the circle
+# the idea is that the circle starts moving at zero module, moves to the random neighbour module and so on
+def make_random_movement():
+    global objects_coords
+    # 1 -> X increases, -1 -> X decreases, 0 -> X doesn't change (same for X)
+    x_dir_choice = (-1, 0, 1)
+    y_dir_choice = (-1, 0, 1)
+    # how much each coordinate will be changed
+    delta = 50
+    x_dir = random.choice(x_dir_choice)
+    y_dir = random.choice(y_dir_choice)
+    for obj, coords in objects_coords.items():
+        x, y = coords[0], coords[1]
+        x += x_dir * delta
+        y += y_dir * delta
+        objects_coords[obj] = [x, y]
+
+# function checks if the object is still on the module
+def on_module(x, y):
+    on = True
+    if (x > 480) or (y > 480):
+        on = False
+    if (x < 0) or (y < 0):
+        on = False
+    return on
 
 
 @app.route('/coords', methods=['GET', 'POST'])
 # function is used to test recalculation of object coords
 def module_to_module():
+    global initial_side_num, initial_module_num, prev_side_num, prev_module_num
     cube = Cube()
     # images to be put it zip archive
     images = []
     # with each request we MUST update positions of modules of the cube
     cube.update_grid(request)
-    x, y = move_circle()
+    # move all circles randomly
+    #make_random_movement()
+    move_circle(dir='down')
     if cube.grid is not None:
-        print(f'\ncube.grid[0][0][0] is {cube.grid[0][0][0]} \ncube.grid[0][1][0] is {cube.grid[0][1][0]}')
-        # draw an object on the zero module
+        initial_module = cube.modules[cube.grid[initial_side_num][initial_module_num][0]]
+        # all other modules of the cube
+        compared_modules = []
+        for module in cube.modules:
+            if module.num != initial_module.num:
+                compared_modules.append(module)
 
-        initial_module = cube.modules[cube.grid[0][0][0]]
-        compared_module = cube.modules[cube.grid[0][1][0]]
 
-        for screen in initial_module.update_screens(x, y):
-            # screen order MUST be 0, 1, 2
-            images.append(screen.surface)
+        # FIXME if there are two for cycles here - we will have more than 24 images - that's wrong!
+        # FIXME the step() functions in cube works only for ONE object on module
+        # FIXME but there can be several!
 
-        # recalculate coordinates for the other module - to the right from zero module
-        new_x, new_y = cube.recalc_coords(initial_module.num, x, y, compared_module.num)
-        print(f'new_x is {new_x}, new_y is {new_y}')
-        # only if new coordinates were successfully calculated - we draw the object
-        if (new_x is not None) and (new_y is not None):
-            for screen in compared_module.update_screens(new_x, new_y):
+        # coords of all objects
+        global objects_coords
+        # update all screens of initial module
+        for obj, [x, y] in objects_coords.items():
+            for screen in initial_module.update_screens(x, y):
+                # screen order MUST be 0, 1, 2
                 images.append(screen.surface)
-    # fill up the rest of images
-    while len(images) != 24:
-        images.append(np.zeros((240, 240, 3), np.uint8))
+
+        # recalculate coordinates for each of objects for each of modules
+        for obj, [x, y] in objects_coords.items():
+            for compared_module in compared_modules:
+                new_x, new_y = cube.recalc_coords(initial_module.num, x, y, compared_module.num)
+                # only if new coordinates were successfully calculated - we draw the object
+                if (new_x is not None) and (new_y is not None):
+                    for screen in compared_module.update_screens(new_x, new_y):
+                        images.append(screen.surface)
+                    # if the circle moved onto the other module (the new one) then we change the current module
+                    if on_module(new_x, new_y):
+                        print("\n\n MOVED OUTSIDE THE MODULE!")
+                        prev_side_num = initial_side_num
+                        prev_module_num = initial_module_num
+                        initial_side_num, initial_module_num = cube.find_in_grid(compared_module.num, 0)
+                        print(f'now initial_side_num is {initial_side_num} and initial_module_num (on that side) is {initial_module_num}')
+
+    # fill up the rest of images just in case
+    if len(images) < 24:
+        while len(images) != 24:
+            images.append(np.zeros((240, 240, 3), np.uint8))
+
     # put the images into the response archive
     memory_file = io.BytesIO()
     img_num = 0
@@ -105,7 +168,6 @@ def module_to_module():
 
     cube.clear_screens()
 
-    del cube
     return response
 
 
@@ -223,9 +285,6 @@ def draw_coords():
     memory_file.seek(0)
     response = make_response(memory_file.read())
     response.headers['Content-Type'] = 'application/zip'
-
-    # deleting cube object to free memory
-    del cube
 
     return response
 

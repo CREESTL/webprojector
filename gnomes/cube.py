@@ -15,6 +15,7 @@ class Screen:
         # the number of a screen on the module
         self.num = num
 
+
 # class represents a single module
 class Module:
     def __init__(self, num):
@@ -196,7 +197,6 @@ class Cube:
     # front - 0; up - 1; left - 2; right - 3; back - 4; down - 5;
     def update_grid(self, request):
 
-        print(f'request in update_grid is {request.json}')
         # before updating the grid we have to update the trbl
         self.update_trbl(request)
 
@@ -266,6 +266,7 @@ class Cube:
         for side, info in self.grid.items():
             pair = [module, screen]
             if pair in info:
+                # returns number of side and index of the module on the side
                 return side, info.index(pair)
 
     # function calculates on which screen of the initial module the object is located
@@ -294,8 +295,8 @@ class Cube:
         initial_module_side, initial_module_index = self.find_in_grid(initial_module, 0)
         # we have to look for compared module 0 screen (it's origin)
         compared_module_side, compared_module_index = self.find_in_grid(compared_module, 0)
-        # print(f'\ninitial module origin: side {initial_module_side} index {initial_module_index}')
-        # print(f'compared module origin: side {compared_module_side} index {compared_module_index}')
+        print(f'\ninitial module origin: side {initial_module_side} index {initial_module_index}')
+        print(f'compared module origin: side {compared_module_side} index {compared_module_index}')
 
         # how many times we have to rotate 0 module of compared side to reach the compared module
         rotate_times = abs(compared_module_index - initial_module_index)
@@ -312,6 +313,7 @@ class Cube:
         # front
         # if compared module is located on the same side as the initial one
         if compared_module_side == initial_module_side:
+            #print('compared module`s origin is on the same side')
             initial_screen = self.find_screen(x, y)
             if initial_screen == 0:
                 for i in range(rotate_times):
@@ -343,9 +345,9 @@ class Cube:
 
         # if compared module is located on one of four neighbour sides
         if compared_module_side in grid_graph[initial_module_side]:
-            print('compared module`s origin is on the neighbour side')
+            #print('compared module`s origin is on the up, down, left or right side')
             direction = grid_graph[initial_module_side].index(compared_module_side)
-            print(f'direction is {direction}')
+            #print(f'direction is {direction}')
             # now depending on direction where the compared module is located we make coordinates transformations
             # I won't explain all calculations here - it's too much
 
@@ -353,7 +355,6 @@ class Cube:
             # up
             if direction == 0:
                 initial_screen = self.find_screen(x, y)
-                print(f'initial_screen is {initial_screen}')
                 if initial_screen == 0:
                     y -= 480
                     for i in range(rotate_times):
@@ -381,7 +382,6 @@ class Cube:
             # left
             elif direction == 1:
                 initial_screen = self.find_screen(x, y)
-                print(f'initial_screen is {initial_screen}')
                 if initial_screen == 0:
                     x -= 480
                     for i in range(rotate_times):
@@ -410,7 +410,6 @@ class Cube:
             # right
             elif direction == 2:
                 initial_screen = self.find_screen(x, y)
-                print(f'initial_screen is {initial_screen}')
                 if initial_screen == 0:
                     x += 480
                     for i in range(rotate_times):
@@ -456,7 +455,6 @@ class Cube:
             # down
             elif direction == 3:
                 initial_screen = self.find_screen(x, y)
-                print(f'initial_screen is {initial_screen}')
                 if initial_screen == 0:
                     y += 480
                     for i in range(rotate_times):
@@ -487,8 +485,8 @@ class Cube:
                     return x, y
         # back
         else:
+            #print('compared module`s origin is on the back side')
             initial_screen = self.find_screen(x, y)
-            print(f'initial_screen is {initial_screen}')
             if initial_screen == 0:
                 x_copy = x
                 y_copy = y
