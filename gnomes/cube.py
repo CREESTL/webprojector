@@ -68,6 +68,7 @@ class Module:
             return False
 
     # function moves the object to the given TWO coordinates
+    # it just changes X and Y
     def move(self, x, y):
         # if we changed X and moved to the other screen then we change axes places
         if self.step(x, 0):
@@ -101,7 +102,13 @@ class Module:
         screen_number, x, y = self.get_attributes()
         if screen_number is not None:
             screen = self.screens[screen_number]
+            # FIXME bug here? are screens actually changed?
             cv2.circle(screen.surface, (int(x), int(y)), r, color, thickness)
+            for img_num, screen in enumerate(self.screens):
+                # FIXME doesn't seem like that: here all screens are black after saving into directory
+                cv2.imwrite(
+                    '/home/creestl/programming/python_coding/wowcube/webprojector/gnomes/debug/screens/%i.jpg' % img_num,
+                    screen.surface)
             return self.screens
         else:
             return []

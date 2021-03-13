@@ -93,8 +93,6 @@ def changed_module(new_x, new_y):
 def module_to_module():
     global initial_module_num, initial_module, prev_module
     cube = Cube()
-    # images to be put it zip archive
-    images = []
     # with each request we MUST update positions of modules of the cube
     cube.update_grid(request)
     # move all circles randomly
@@ -110,16 +108,11 @@ def module_to_module():
             if module.num != initial_module.num:
                 compared_modules.append(module)
 
+        # FIXME I've deleted images[] after writing all below
         # FIXME for some reason the circle is not drawing any more (even on the 0 module)
         # FIXME bug is that we don't even use images array to put them all in archive - we use screens.surfaces
-        # FIXME images are OK - there are circles there, but on the modules themselves - no
 
-        # FIXME if I save the images into a folder there are many circles on them - not just the one as it's supposed to be
         # FIXME clear_screens() doesn't work???
-
-        # FIXME if there are two for cycles here - we will have more than 24 images - that's wrong!
-        # FIXME the step() functions in cube works only for ONE object on module
-        # FIXME but there can be several!
 
         # FIXME NOTE that if we keep increasing Y after moving to the new module - the circle won't keep moving
         # FIXME in straight line because axes are differently angled!!!
@@ -127,10 +120,11 @@ def module_to_module():
         # coords of all objects
         global objects_coords
         # update all screens of initial module
+        # FIXME if there are two for cycles here - we will have more than 24 images - that's wrong!
+        # FIXME the step() functions in cube works only for ONE object on module
+        # FIXME but there can be several!
         for obj, [x, y] in objects_coords.items():
-            for screen in initial_module.update_screens(x, y):
-                # screen order MUST be 0, 1, 2
-                images.append(screen.surface)
+            initial_module.update_screens(x, y)
 
         # recalculate coordinates for each of objects for each of the rest of modules
         for obj, [x, y] in objects_coords.items():
@@ -140,8 +134,7 @@ def module_to_module():
                 print(f'-- for compared module {compared_module.num} new coords are {new_x, new_y}')
                 # only if new coordinates were successfully calculated - we draw the object
                 if (new_x is not None) and (new_y is not None):
-                    for screen in compared_module.update_screens(new_x, new_y):
-                        images.append(screen.surface)
+                    compared_module.update_screens(new_x, new_y)
                     # if the circle moved onto the other module (the new one) then we change the current module
                     if changed_module(new_x, new_y):
                         print("MOVED TO THE NEW MODULE!")
@@ -153,11 +146,6 @@ def module_to_module():
                     else:
                         print("stayed on the same module")
 
-    # fill up the rest of images just in case
-    if len(images) < 24:
-        while len(images) != 24:
-            images.append(np.zeros((240, 240, 3), np.uint8))
-
     # put the images into the response archive
     memory_file = io.BytesIO()
     img_num = 0
@@ -166,7 +154,7 @@ def module_to_module():
         for module in cube.modules:
             for screen in module.screens:
                 # TODO just for debug
-                cv2.imwrite('/home/creestl/programming/python_coding/wowcube/webprojector/gnomes/debug/3/%i.jpg' %img_num, screen.surface)
+                cv2.imwrite('/home/creestl/programming/python_coding/wowcube/webprojector/gnomes/debug/images/%i.jpg' %img_num, screen.surface)
                 output_img = screen.surface
                 encode_param = []
                 # encode each of 24 images
