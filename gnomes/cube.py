@@ -15,7 +15,6 @@ class Screen:
         # the number of a screen on the module
         self.num = num
 
-
 # class represents a single module
 class Module:
     def __init__(self, num):
@@ -295,8 +294,8 @@ class Cube:
         initial_module_side, initial_module_index = self.find_in_grid(initial_module, 0)
         # we have to look for compared module 0 screen (it's origin)
         compared_module_side, compared_module_index = self.find_in_grid(compared_module, 0)
-        print(f'\ninitial module origin: side {initial_module_side} index {initial_module_index}')
-        print(f'compared module origin: side {compared_module_side} index {compared_module_index}')
+        #print(f'\ninitial module origin: side {initial_module_side} index {initial_module_index}')
+        #print(f'compared module origin: side {compared_module_side} index {compared_module_index}')
 
         # how many times we have to rotate 0 module of compared side to reach the compared module
         rotate_times = abs(compared_module_index - initial_module_index)

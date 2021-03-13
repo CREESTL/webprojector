@@ -31,12 +31,12 @@ log.disabled = True
 
 # here will be stored coordinates of all objects (circles)
 objects_coords = {0: [120, 120]}
-# initial module and side for objects to appear
-initial_side_num = 0
+# the very first module to start with
 initial_module_num = 0
+# the module where the object is currently located
+initial_module = None
 # previous module where the circle has been
-prev_side_num = None
-prev_module_num = None
+prev_module = None
 
 # TODO create a function that checks all directions: right, left, up, down
 # TODO seems like right works correctly, but up and down...not sure
@@ -71,7 +71,7 @@ def make_random_movement():
     x_dir_choice = (-1, 0, 1)
     y_dir_choice = (-1, 0, 1)
     # how much each coordinate will be changed
-    delta = 50
+    delta = 10
     x_dir = random.choice(x_dir_choice)
     y_dir = random.choice(y_dir_choice)
     for obj, coords in objects_coords.items():
@@ -80,20 +80,18 @@ def make_random_movement():
         y += y_dir * delta
         objects_coords[obj] = [x, y]
 
+
 # function checks if the object is still on the module
-def on_module(x, y):
-    on = True
-    if (x > 480) or (y > 480):
-        on = False
-    if (x < 0) or (y < 0):
-        on = False
-    return on
+def changed_module(new_x, new_y):
+    if (0 <= new_x <= 480) and (0 <= new_y <= 480):
+        return True
+    return False
 
 
 @app.route('/coords', methods=['GET', 'POST'])
 # function is used to test recalculation of object coords
 def module_to_module():
-    global initial_side_num, initial_module_num, prev_side_num, prev_module_num
+    global initial_module_num, initial_module, prev_module
     cube = Cube()
     # images to be put it zip archive
     images = []
@@ -101,19 +99,30 @@ def module_to_module():
     cube.update_grid(request)
     # move all circles randomly
     #make_random_movement()
-    move_circle(dir='down')
+    move_circle(dir='up')
     if cube.grid is not None:
-        initial_module = cube.modules[cube.grid[initial_side_num][initial_module_num][0]]
+        # only once the very first module is initialized
+        if initial_module is None:
+            initial_module = cube.modules[initial_module_num]
         # all other modules of the cube
         compared_modules = []
         for module in cube.modules:
             if module.num != initial_module.num:
                 compared_modules.append(module)
 
+        # FIXME for some reason the circle is not drawing any more (even on the 0 module)
+        # FIXME bug is that we don't even use images array to put them all in archive - we use screens.surfaces
+        # FIXME images are OK - there are circles there, but on the modules themselves - no
+
+        # FIXME if I save the images into a folder there are many circles on them - not just the one as it's supposed to be
+        # FIXME clear_screens() doesn't work???
 
         # FIXME if there are two for cycles here - we will have more than 24 images - that's wrong!
         # FIXME the step() functions in cube works only for ONE object on module
         # FIXME but there can be several!
+
+        # FIXME NOTE that if we keep increasing Y after moving to the new module - the circle won't keep moving
+        # FIXME in straight line because axes are differently angled!!!
 
         # coords of all objects
         global objects_coords
@@ -123,21 +132,26 @@ def module_to_module():
                 # screen order MUST be 0, 1, 2
                 images.append(screen.surface)
 
-        # recalculate coordinates for each of objects for each of modules
+        # recalculate coordinates for each of objects for each of the rest of modules
         for obj, [x, y] in objects_coords.items():
+            print(f'\n\nfor initial module {initial_module.num} coords are {x, y}')
             for compared_module in compared_modules:
                 new_x, new_y = cube.recalc_coords(initial_module.num, x, y, compared_module.num)
+                print(f'-- for compared module {compared_module.num} new coords are {new_x, new_y}')
                 # only if new coordinates were successfully calculated - we draw the object
                 if (new_x is not None) and (new_y is not None):
                     for screen in compared_module.update_screens(new_x, new_y):
                         images.append(screen.surface)
                     # if the circle moved onto the other module (the new one) then we change the current module
-                    if on_module(new_x, new_y):
-                        print("\n\n MOVED OUTSIDE THE MODULE!")
-                        prev_side_num = initial_side_num
-                        prev_module_num = initial_module_num
-                        initial_side_num, initial_module_num = cube.find_in_grid(compared_module.num, 0)
-                        print(f'now initial_side_num is {initial_side_num} and initial_module_num (on that side) is {initial_module_num}')
+                    if changed_module(new_x, new_y):
+                        print("MOVED TO THE NEW MODULE!")
+                        prev_module = initial_module
+                        initial_module = compared_module
+                        # and change coordinates of the object (now they are calculate relative to the new origin)
+                        objects_coords[obj] = [new_x, new_y]
+                        print(f'now initial module is {initial_module.num}')
+                    else:
+                        print("stayed on the same module")
 
     # fill up the rest of images just in case
     if len(images) < 24:
@@ -148,8 +162,11 @@ def module_to_module():
     memory_file = io.BytesIO()
     img_num = 0
     with ZipFile(memory_file, "w") as zip_file:
+        #FIXME bug here: all screens are black
         for module in cube.modules:
             for screen in module.screens:
+                # TODO just for debug
+                cv2.imwrite('/home/creestl/programming/python_coding/wowcube/webprojector/gnomes/debug/3/%i.jpg' %img_num, screen.surface)
                 output_img = screen.surface
                 encode_param = []
                 # encode each of 24 images
