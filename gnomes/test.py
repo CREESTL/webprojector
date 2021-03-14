@@ -31,15 +31,12 @@ log.disabled = True
 
 # here will be stored coordinates of all objects (circles)
 objects_coords = {0: [120, 120]}
-# the very first module to start with
-initial_module_num = 0
 # the module where the object is currently located
+# starts with module 0
+initial_module_num = 0
 initial_module = None
 # previous module where the circle has been
 prev_module = None
-
-# TODO create a function that checks all directions: right, left, up, down
-# TODO seems like right works correctly, but up and down...not sure
 
 # up works wrong when moving from module 0 to module 5
 # right works good only for module 0 and module 1
@@ -99,20 +96,14 @@ def module_to_module():
     #make_random_movement()
     move_circle(dir='up')
     if cube.grid is not None:
-        # only once the very first module is initialized
-        if initial_module is None:
+        # if there was no any previous modules - we create the very first one
+        if prev_module is None:
             initial_module = cube.modules[initial_module_num]
         # all other modules of the cube
         compared_modules = []
         for module in cube.modules:
             if module.num != initial_module.num:
                 compared_modules.append(module)
-
-        # FIXME I've deleted images[] after writing all below
-        # FIXME for some reason the circle is not drawing any more (even on the 0 module)
-        # FIXME bug is that we don't even use images array to put them all in archive - we use screens.surfaces
-
-        # FIXME clear_screens() doesn't work???
 
         # FIXME NOTE that if we keep increasing Y after moving to the new module - the circle won't keep moving
         # FIXME in straight line because axes are differently angled!!!
@@ -150,11 +141,8 @@ def module_to_module():
     memory_file = io.BytesIO()
     img_num = 0
     with ZipFile(memory_file, "w") as zip_file:
-        #FIXME bug here: all screens are black
         for module in cube.modules:
             for screen in module.screens:
-                # TODO just for debug
-                cv2.imwrite('/home/creestl/programming/python_coding/wowcube/webprojector/gnomes/debug/images/%i.jpg' %img_num, screen.surface)
                 output_img = screen.surface
                 encode_param = []
                 # encode each of 24 images

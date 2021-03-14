@@ -33,8 +33,7 @@ class Module:
     def update_screens(self, x, y):
         self.move(x, y)
         # draw an object on those coordinates
-        self.screens = self.draw_point()
-        return self.screens
+        self.draw_point()
 
     # function clears all screens
     def clear_screens(self):
@@ -101,18 +100,10 @@ class Module:
         # the screen to draw on and the coordinates on it
         screen_number, x, y = self.get_attributes()
         if screen_number is not None:
-            screen = self.screens[screen_number]
-            # FIXME bug here? are screens actually changed?
-            cv2.circle(screen.surface, (int(x), int(y)), r, color, thickness)
-            for img_num, screen in enumerate(self.screens):
-                # FIXME doesn't seem like that: here all screens are black after saving into directory
-                cv2.imwrite(
-                    '/home/creestl/programming/python_coding/wowcube/webprojector/gnomes/debug/screens/%i.jpg' % img_num,
-                    screen.surface)
-            return self.screens
-        else:
-            return []
-
+            surface = self.screens[screen_number].surface
+            # it returns a new image
+            new_surface = cv2.circle(surface, (int(x), int(y)), r, color, thickness)
+            self.screens[screen_number].surface = new_surface
 
 # class represents the whole cube of 8 modules and 24 screens
 class Cube:
@@ -123,6 +114,12 @@ class Cube:
         self.trbl = None
         self.grid = None
         self.modules = [Module(i) for i in range(self.num_modules)]
+
+    # Singleton pattern is used here to create only one cube
+    def __new__(cls):
+        if not hasattr(cls, 'instance'):
+            cls.instance = super(Cube, cls).__new__(cls)
+        return cls.instance
 
     # function forms a table of relative positions of module
     def update_trbl(self, request):
