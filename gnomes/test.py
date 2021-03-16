@@ -5,7 +5,7 @@ import io
 import logging.handlers
 from zipfile import ZipFile, ZipInfo
 import zipfile
-from cube import Cube
+from .cube import Cube
 import random
 
 '''
@@ -115,7 +115,15 @@ def module_to_module():
         # FIXME the step() functions in cube works only for ONE object on module
         # FIXME but there can be several!
         for obj, [x, y] in objects_coords.items():
+            # FIXME for some reason after moving from m0 to m5 it draws circle on the wrong side of m5
+            # FIXME bug is that get_attributes() returns wrong coords
+            print(f'updating screens of initial_module {initial_module.num}')
             initial_module.update_screens(x, y)
+
+        print('\n\nobjects_coords after moving circle are: ')
+        for obj, [x, y] in objects_coords.items():
+            print(obj, x, y)
+
 
         # recalculate coordinates for each of objects for each of the rest of modules
         for obj, [x, y] in objects_coords.items():

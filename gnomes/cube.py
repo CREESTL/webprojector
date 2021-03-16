@@ -43,6 +43,8 @@ class Module:
     # function moves the object using ONE coordinate
     # coord - module of coordinate we move to
     # coord_num - position of the coordinate in self.coords array (0 or 1 for X and same for Y)
+    # FIXME works incorrectly for m2: (465, 170)...
+    # FIXME understand how physical x and y go for the screen (cv2)
     def step(self, coord, coord_num):
         # function calculates screen number using ONE coordinate, so for both X and Y screen number must be 0
         self.cur_screen = 0
@@ -90,7 +92,8 @@ class Module:
 
     # function returns everything for drawing an object on a screen
     def get_attributes(self):
-        return self.screens_order[self.cur_screen], self.coords[0], self.coords[1]
+        #return self.screens_order[self.cur_screen], self.coords[0], self.coords[1]
+        return self.cur_screen, self.coords[0], self.coords[1]
 
     # function draws a circle using module coordinates system
     def draw_point(self):
@@ -98,11 +101,13 @@ class Module:
         r = 10
         thickness = 8
         # the screen to draw on and the coordinates on it
-        screen_number, x, y = self.get_attributes()
+        screen_number, screen_x, screen_y = self.get_attributes()
+        if self.num == 5:
+            print(f'in draw_point screen_number is {screen_number} and coords ON THE SCREEN are {screen_x, screen_y}')
         if screen_number is not None:
             surface = self.screens[screen_number].surface
             # it returns a new image
-            new_surface = cv2.circle(surface, (int(x), int(y)), r, color, thickness)
+            new_surface = cv2.circle(surface, (int(screen_x), int(screen_y)), r, color, thickness)
             self.screens[screen_number].surface = new_surface
 
 # class represents the whole cube of 8 modules and 24 screens
