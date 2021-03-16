@@ -29,6 +29,9 @@ class Module:
         # in this order screens are to be processed
         self.screens_order = [0, 1, 2]
 
+    def __repr__(self):
+        return f'{self.__class__.__name__} with num = {self.num}'
+
     # function draws an object using scubic coordinates of the module
     def update_screens(self, x, y):
         self.move(x, y)
@@ -43,11 +46,11 @@ class Module:
     # function moves the object using ONE coordinate
     # coord - module of coordinate we move to
     # coord_num - position of the coordinate in self.coords array (0 or 1 for X and same for Y)
-    # FIXME works incorrectly for m2: (465, 170)...
-    # FIXME understand how physical x and y go for the screen (cv2)
+    # FIXME works incorrectly for m2: (465, 145)...
+    # FIXME do we need to make cur_screen = 0 each time?
     def step(self, coord, coord_num):
         # function calculates screen number using ONE coordinate, so for both X and Y screen number must be 0
-        self.cur_screen = 0
+        #self.cur_screen = 0
         # moving outside the screen
         if coord > 240:
             # making X of new screen equal to Y of previous screen
@@ -92,7 +95,6 @@ class Module:
 
     # function returns everything for drawing an object on a screen
     def get_attributes(self):
-        #return self.screens_order[self.cur_screen], self.coords[0], self.coords[1]
         return self.cur_screen, self.coords[0], self.coords[1]
 
     # function draws a circle using module coordinates system
@@ -102,8 +104,6 @@ class Module:
         thickness = 8
         # the screen to draw on and the coordinates on it
         screen_number, screen_x, screen_y = self.get_attributes()
-        if self.num == 5:
-            print(f'in draw_point screen_number is {screen_number} and coords ON THE SCREEN are {screen_x, screen_y}')
         if screen_number is not None:
             surface = self.screens[screen_number].surface
             # it returns a new image

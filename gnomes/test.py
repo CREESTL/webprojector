@@ -5,7 +5,7 @@ import io
 import logging.handlers
 from zipfile import ZipFile, ZipInfo
 import zipfile
-from .cube import Cube
+from cube import Cube
 import random
 
 '''
@@ -90,10 +90,18 @@ def changed_module(new_x, new_y):
 def module_to_module():
     global initial_module_num, initial_module, prev_module
     cube = Cube()
+
+    # FIXME debugging step()
+    # m5 = cube.modules[5]
+    # m5.update_screens(465, 145)
+    # cur_screen, screen_x, screen_y = m5.get_attributes()
+    # print(f'\n\non m5: {cur_screen, screen_x, screen_y}')
+
+    if initial_module and (initial_module.num == cube.modules[5].num):
+        if initial_module is not cube.modules[5]:
+            print("WARNING initial module has DIFFERENT address than the cube.modules[5]")
     # with each request we MUST update positions of modules of the cube
     cube.update_grid(request)
-    # move all circles randomly
-    #make_random_movement()
     move_circle(dir='up')
     if cube.grid is not None:
         # if there was no any previous modules - we create the very first one
@@ -114,20 +122,13 @@ def module_to_module():
         # FIXME if there are two for cycles here - we will have more than 24 images - that's wrong!
         # FIXME the step() functions in cube works only for ONE object on module
         # FIXME but there can be several!
-        for obj, [x, y] in objects_coords.items():
-            # FIXME for some reason after moving from m0 to m5 it draws circle on the wrong side of m5
-            # FIXME bug is that get_attributes() returns wrong coords
-            print(f'updating screens of initial_module {initial_module.num}')
-            initial_module.update_screens(x, y)
-
-        print('\n\nobjects_coords after moving circle are: ')
-        for obj, [x, y] in objects_coords.items():
-            print(obj, x, y)
-
 
         # recalculate coordinates for each of objects for each of the rest of modules
         for obj, [x, y] in objects_coords.items():
+            # FIXME for some reason after moving from m0 to m5 it draws circle on the wrong side of m5
+            # FIXME bug is that get_attributes() returns wrong coords and step() works wrong???
             print(f'\n\nfor initial module {initial_module.num} coords are {x, y}')
+            initial_module.update_screens(x, y)
             for compared_module in compared_modules:
                 new_x, new_y = cube.recalc_coords(initial_module.num, x, y, compared_module.num)
                 print(f'-- for compared module {compared_module.num} new coords are {new_x, new_y}')
@@ -138,12 +139,13 @@ def module_to_module():
                     if changed_module(new_x, new_y):
                         print("MOVED TO THE NEW MODULE!")
                         prev_module = initial_module
+                        # FIXME bug is that "cube.modules[5] is initial_module = True" si these are 2 different objects
                         initial_module = compared_module
+                        cube.modules[initial_module.num] = initial_module
                         # and change coordinates of the object (now they are calculate relative to the new origin)
                         objects_coords[obj] = [new_x, new_y]
                         print(f'now initial module is {initial_module.num}')
-                    else:
-                        print("stayed on the same module")
+                        break
 
     # put the images into the response archive
     memory_file = io.BytesIO()
